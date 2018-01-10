@@ -9,7 +9,9 @@ classdef RBody < handle
         dt;
         time;
         states = [];      
-        writer; % contains the arrays
+        writer; % writer saves time history of states in arrays so that
+                % this object does not have to. The writer class can be 
+                % generic and used by several objects
         
         prefix = 'rbody';
         stateLabels = {...
@@ -27,6 +29,9 @@ classdef RBody < handle
             
             self.integrator = Integrator(self.states,self.dt);
             self.writer = Writer(self.prefix,self.stateLabels);
+            
+            % write the first set of data. Could argue ghat this can be
+            % done upon construction. 
             self.writer.updateTime(self.time);
             self.writer.updateStates(self.states);
         end
@@ -40,7 +45,7 @@ classdef RBody < handle
             % get all derivates updates from all the producers
             omega = self.states';
             I = self.inertia;
-            self.integrator.derivatives = (-cross(omega,I*omega) - omega)';
+            self.integrator.derivatives = (inv(I)*(-cross(omega,I*omega) - omega))';
   
             % perform the update integration step
             [self.time,self.states] = self.integrator.integrate();

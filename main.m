@@ -1,9 +1,10 @@
 clear;
 close all;
 
-tspan = [0;10];
+t0 = 0;
+tf = 10;
+tspan = [t0;tf];
 x0 = [1 2 3];
-
 [tout,xout] = ode45(@test_eom,tspan,x0);
 
 dt = 0.01; % same as sim time
@@ -11,10 +12,14 @@ states = [1 2 3];
 
 rbody = RBody(states,dt);
 
-while rbody.time < 10
+% change to a sim time. Allow multiple rates of running different objects
+% and different output rates. Integration rate, output rate. RK can have
+% different internal minimum rates also. 
+while rbody.time < tf
     rbody.step;
 end
 
+% write the output
 rbody.write;
 
 figure;
