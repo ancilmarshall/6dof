@@ -1,4 +1,4 @@
-classdef RBody < handle
+classdef RBody < IProducer
    
     properties
         
@@ -14,23 +14,24 @@ classdef RBody < handle
                 % this object does not have to. The writer class can be 
                 % generic and used by several objects
         
-        prefix = 'rbody';
-        stateLabels = {...
-            'u',...
-            'v',...
-            'w',...
-            'omega_x',...
-            'omega_y',...
-            'omega_z',...
-            'q0',...
-            'q1',...
-            'q2',...
-            'q3'};
+
     end
     
     properties (Access = private )
         numStates;
-        consumers = [];
+        prefix = 'rbody';
+        outputVars = {
+            'u'
+            'v'
+            'w'
+            'omega_x'
+            'omega_y'
+            'omega_z'
+            'q0'
+            'q1'
+            'q2'
+            'q3'
+            };
     end
 
     methods
@@ -41,7 +42,7 @@ classdef RBody < handle
             self.dt = dt;
             
             self.integrator = Integrator(self.states,self.dt);
-            self.writer = Writer(self.prefix,self.stateLabels);
+            self.writer = Writer(self.prefix,self.outputVars);
             
             % write the first set of data. Could argue ghat this can be
             % done upon construction. 
@@ -88,7 +89,7 @@ classdef RBody < handle
             self.writer.updateTime(self.time);
             self.writer.updateStates(self.states)
             
-            for i=1:self.consumers
+            for i=1:length(self.consumers)
                 consumer = self.consumers(i);
                 consumer.updateStates(self.states)
             end

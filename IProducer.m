@@ -1,12 +1,25 @@
 classdef IProducer < handle
     
-    properties
-        consumers = IConsumer();
+    properties 
+        consumers = [];
+    end
+    
+    properties (Access = private)
+        states;
     end
     
     methods
-        function addConsumer(self,consumer)
-            consumers(end+1) = consumer;
+        function registerConsumer(self,consumer)
+            
+            if isempty(self.consumers)
+                self.consumers = consumer;
+            else
+                self.consumers(end+1) = consumer;
+            end
+            
+            % register the reverse relationship 
+            % TODO: check first
+            
         end
     end
 end

@@ -62,30 +62,9 @@ classdef Integrator < handle
             
         end
         
-        function registerProducer(self,producer)
-            % check if producers is not already in the list
-            % not sure about retain cycle
-            % check the type
-            
-            if isempty(self.producers)
-                self.producers = producer;
-            else 
-                self.producers(end+1) = producer;
-            end
-            
-            % register the reverse relationship
-        end
+
         
-        function registerConsumer(self,consumer)
-            
-            if isempty(self.consumers)
-                self.consumers = consumer;
-            else
-                self.consumers(end+1) = consumer;
-            end
-            
-            % register the reverse relationship
-        end
+
         
         
 
