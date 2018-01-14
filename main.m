@@ -4,11 +4,11 @@ close all;
 t0 = 0;
 tf = 10;
 tspan = [t0;tf];
-x0 = [1 2 3];
-[tout,xout] = ode45(@test_eom,tspan,x0);
+x0 = [1 2 3 1 2 3 0 0 0 0]';
+[tout,xout] = ode45(@test_eom,tspan,x0(1:3));
 
 dt = 0.01; % same as sim time
-states = [1 2 3];
+states = x0;
 
 rbody = RBody(states,dt);
 

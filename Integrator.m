@@ -4,10 +4,12 @@ classdef Integrator < handle
        dt;
        time;
        states = [];
-       derivatives = [];
-       producers = [];
-       consumers = [];
-       
+    end
+    
+    properties (Access = private)
+        producers = [];
+        consumers = [];
+        derivatives = [];
     end
     
     methods
@@ -27,13 +29,13 @@ classdef Integrator < handle
             self.derivatives = derivatives;
         end   
         
-        function [tout,xout] = integrate(self)
+        function [tout,xout] = step(self)
             %check if states is non-empty
             %check that derivatives are set
             
             % simple euler integration
             % improve to RK-4 integration
-            self.states = self.states + self.derivatives .* self.dt;
+            self.states = self.states + self.derivatives * self.dt;
             for i=1:length(self.consumers)
                 self.consumers(i).updateStates(self.states)
             end

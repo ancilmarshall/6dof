@@ -29,6 +29,7 @@ classdef Writer < handle
         end
         
         function updateStates(self,states)
+            states = states'; % transpose to form row vector
             if isempty(states)
                 self.states = states;
             else
