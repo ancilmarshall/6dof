@@ -1,12 +1,12 @@
-classdef Kinematics < IConsumer
+classdef Nav < IConsumer
     
     properties
-        alpha;
-        beta;
-        psi;
-        theta;
-        phi;
-        C_toBFromN;
+        alpha = 0;
+        beta = 0;
+        psi = 0;
+        theta = 0;
+        phi = 0;
+        C_toBFromN = zeros(9,1);
         
         time; %temporary. TODO: way to write for object with no integrator
               % so a static (not dynamic model) % need simtime
@@ -31,7 +31,7 @@ classdef Kinematics < IConsumer
     methods
         
         % Constructor
-        function self = Kinematics(dt)
+        function self = Nav(dt)
             self.time = 0;
             self.dt = dt;
             self.writer = Writer(self.prefix,self.outputLabels);
@@ -76,8 +76,19 @@ classdef Kinematics < IConsumer
             E = eye(3);
             qvec = [q1;q2;q3];
             Q = [0 -q3 q2 ; q3 0 -q1 ; -q2 q1 0 ];
-            %self.C_toBFromN = q0^2*E - qvec'*qvec*E + 2*(qvec*qvec') + 2*q0*Q;
-                        
+            C = q0^2*E - qvec'*qvec*E + 2*(qvec*qvec') + 2*q0*Q;
+            self.C_toBFromN = [
+                C(1,1)
+                C(1,2)
+                C(1,3)
+                C(2,1)
+                C(2,2)
+                C(2,3)
+                C(3,1)
+                C(3,2)
+                C(3,3)
+                ];
+                
             %update
             self.time = self.time + self.dt;
             self.updateOutput();
