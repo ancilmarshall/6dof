@@ -2,6 +2,7 @@ classdef (Abstract) IConsumer < handle
     
     properties (Access = private)
         producers = [];
+        name;
     end
     
     properties 
@@ -22,7 +23,9 @@ classdef (Abstract) IConsumer < handle
             if isempty(self.producers)
                 self.producers = producer;
             else 
-                self.producers(end+1) = producer;
+                if ~ self.contains(producer)
+                    self.producers(end+1) = producer;
+                end
             end
             
             % register the reverse relationship
@@ -31,7 +34,15 @@ classdef (Abstract) IConsumer < handle
             
         end
         
-        
+        function res = contains(self,producer)
+            res = false;
+            for i=1:length(self.producers)
+                if strcmp(producer.name,self.producers(i).name)
+                    res = true;
+                    break;
+                end
+            end
+        end
 
         
     end
