@@ -2,7 +2,6 @@ classdef (Abstract) IConsumer < handle
     
     properties (Access = private)
         producers = [];
-        name;
     end
     
     properties 

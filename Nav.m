@@ -37,7 +37,7 @@ classdef Nav < IConsumer
             self.writer = Writer(self.prefix,self.outputLabels);
             self.writer.updateTime(self.time);
             self.updateOutput();
-            self.writer.updateStates(self.output);
+            self.writer.updateData(self.output);
         end
         
         function updateOutput(self)
@@ -55,6 +55,7 @@ classdef Nav < IConsumer
             self.time = time;
         end
         
+        % or maybe update data or maybe a binding function
         function updateStates(self,states)
             self.states = states;
         end
@@ -95,7 +96,7 @@ classdef Nav < IConsumer
             
             %update the writer
             self.writer.updateTime(self.time);
-            self.writer.updateStates(self.output)
+            self.writer.updateData(self.output)
                         
         end
         

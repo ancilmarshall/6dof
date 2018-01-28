@@ -1,23 +1,24 @@
 classdef Writer < handle
     
+    % TODO: Update to write out vectors, 3x1 or matricies as cells or nx1 
     properties
        time;
-       states;
-       stateLabels;
+       data;
+       dataLabels;
        prefix;
     end
     
     properties (Access = private)
-        numStates
+        numdata
     end
     
     methods
         
-        % TODO: initial with initial time,states
-        function self = Writer(prefix,stateLabels)
+        % TODO: initial with initial time,data
+        function self = Writer(prefix,dataLabels)
             self.prefix = prefix;
-            self.stateLabels = stateLabels;
-            self.numStates = length(stateLabels);
+            self.dataLabels = dataLabels;
+            self.numdata = length(dataLabels);
         end
         
         function updateTime(self,time)
@@ -28,22 +29,21 @@ classdef Writer < handle
             end
         end
         
-        function updateStates(self,states)
-            states = states'; % transpose to form row vector
-            if isempty(states)
-                self.states = states;
+        function updateData(self,data)
+            data = data'; % transpose to form row vector
+            if isempty(data)
+                self.data = data;
             else
-                self.states(end+1,:) = states;
+                self.data(end+1,:) = data;
             end
             
         end
         
         function write(self)
             assignin('base',[self.prefix '_time'],self.time);
-            for i=1:self.numStates
-                label = [self.prefix '_' self.stateLabels{i}];
-                state = self.states(:,i);
-                assignin('base',label,state);
+            for i=1:self.numdata
+                label = [self.prefix '_' self.dataLabels{i}];
+                assignin('base',label,self.data(:,i));
             end
         end
         

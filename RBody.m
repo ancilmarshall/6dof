@@ -19,7 +19,7 @@ classdef RBody < IProducer
     
     properties (Access = private )
         numStates;
-        prefix = 'rbody';
+        name = 'rbody';
         outputVars = {
             'u'
             'v'
@@ -42,12 +42,12 @@ classdef RBody < IProducer
             self.dt = dt;
             
             self.integrator = Integrator(self.states,self.dt);
-            self.writer = Writer(self.prefix,self.outputVars);
+            self.writer = Writer(self.name,self.outputVars);
             
             % write the first set of data. Could argue ghat this can be
             % done upon construction. 
             self.writer.updateTime(self.time);
-            self.writer.updateStates(self.states);
+            self.writer.updateData(self.states);
             
             self.numStates = length(states);
         end
@@ -55,7 +55,6 @@ classdef RBody < IProducer
         function registerIntegrator(self,integrator)
             self.integrator = integrator;
         end
-        
         function step(self)
             
             v = self.states(1:3);
@@ -87,7 +86,7 @@ classdef RBody < IProducer
             
             %update the writer
             self.writer.updateTime(self.time);
-            self.writer.updateStates(self.states)
+            self.writer.updateData(self.states)
             
             for i=1:length(self.consumers)
                 consumer = self.consumers(i);

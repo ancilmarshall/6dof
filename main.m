@@ -12,6 +12,8 @@
 clear;
 close all;
 
+% test system
+% states  [u,v,w,p,q,r,q0,q1,q2,q3,Omegax,Omegay,Omegaz]
 t0 = 0;
 tf = 10;
 tspan = [t0;tf];
@@ -35,6 +37,10 @@ rbody.registerConsumer(nav);
 % and different output rates. Integration rate, output rate. RK can have
 % different internal minimum rates also. 
 % while loop could be sequenced by the sim manager
+% all objects with integration services must have a step function
+% others should have an update function which is the measurement or uses
+% outputs of the integration and should come after
+% depending on the producers. Or setup binding.
 while rbody.time < tf
     rbody.step;
     nav.step;

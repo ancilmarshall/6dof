@@ -2,11 +2,10 @@ classdef IProducer < handle
     
     properties
         consumers = [];
-        name;
     end
     
     properties (Access = private)
-        states;
+        states; % Should not be here!
     end
     
     methods
