@@ -1,5 +1,4 @@
 classdef RBody < IProducer
-   
     properties
         
         % get from mass producer
@@ -14,7 +13,7 @@ classdef RBody < IProducer
                 % this object does not have to. The writer class can be 
                 % generic and used by several objects
         
-
+        act; % for testing the actuator producer. 
     end
     
     properties (Access = private )
@@ -64,12 +63,11 @@ classdef RBody < IProducer
             % get all forces and moments from all the producers, and update
             % the integrator derivative
             
-            forces = zeros(3,1);
-            %moments = zeros(3,1);
-            moments = omega;
+            forces = self.act.getForces;
+            moments = self.act.getMoments;
             
-            I = self.inertia;
-            m = self.mass;
+            I = self.inertia + self.act.getInertia;
+            m = self.mass + self.act.getMass;
             
             % set the integrator derivatives for all states
             
@@ -92,6 +90,10 @@ classdef RBody < IProducer
                 consumer = self.consumers(i);
                 consumer.updateStates(self.states)
             end
+            
+            setappdata(0,'data_rbody_p',omega(1));
+            setappdata(0,'data_rbody_q',omega(2));
+            setappdata(0,'data_rbody_r',omega(3));
             
         end
         

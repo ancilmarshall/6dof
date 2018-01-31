@@ -1,8 +1,8 @@
 function derivatives = test_actuator_eom(t,state)
 
-    zeta = 0.707;% (critically damped)
-    wn = 25/(2*pi);% 15Hz actuator bandwidth
-
+    wn = getappdata(0,'config_act_wn');
+    zeta = getappdata(0,'config_act_zeta');
+    
     % do it block by block and by hand
     A = [0 1;-wn^2 -2*zeta*wn];
     B = [0;wn^2];

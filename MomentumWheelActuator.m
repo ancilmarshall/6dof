@@ -3,20 +3,19 @@ classdef MomentumWheelActuator < handle
     
     properties
         
-        inertia = 0.01*eye(3);
+        inertia = 0.1*eye(3);
+        mass = 0.1;
         
         integrator;
         dt;
         time;
         states = [];      % or data vs inegrator states
         %[Omegax,OmegaDotx,Omegay,OmegaDoty,Omegaz,OmegaDotz]
+                
+        control = [0;0;0]; % control input. OmegaxCmd OmegayCmd OmegazCmd
         
-        initialStates = [];
-        
-        control = []; % control input. OmegaxCmd OmegayCmd OmegazCmd
-        
-        forces = [];
-        moments = [];
+        forces = [0;0;0];
+        moments = [0;0;0];
         
         writer; % writer saves time history of states in arrays so that
                 % this object does not have to. The writer class can be 
@@ -26,6 +25,14 @@ classdef MomentumWheelActuator < handle
     properties (Access = private )
         numStates;
         name = 'act';
+        
+        %%% inputs
+        w;
+        
+        %%% outputs
+        
+        
+        %%% log variables
         outputVars = {
             'Omegax'
             'OmegaDotx'
@@ -35,9 +42,9 @@ classdef MomentumWheelActuator < handle
             'OmegaDotz'
             };
         
-        % configuration data
-        zeta = 0.707; % (critically damped)
-        wn = 25/(2*pi); % 15Hz actuator bandwidth
+        %%% configuration data
+        zeta; % damping ratio
+        wn;   % natural frequency 
     end
     
     methods        
@@ -48,8 +55,10 @@ classdef MomentumWheelActuator < handle
             self.states = states;
             self.dt = dt;
             
-            %initial contitions
+            %%%configuration
             
+            self.wn = getappdata(0,'config_act_wn');
+            self.zeta = getappdata(0,'config_act_zeta');
             
             %%% fixme - the number of integration states vs input data
             self.integrator = Integrator(self.states,self.dt);
@@ -66,8 +75,15 @@ classdef MomentumWheelActuator < handle
         
         function step(self)
             
-            w = self.states(1:3);
+            %%% input
+            p = getappdata(0,'data_rbody_p');
+            q = getappdata(0,'data_rbody_q');
+            r = getappdata(0,'data_rbody_r');
+            self.w = [p;q;r];
             
+            % the control loop here
+            %self.control = self.w;
+            self.control = [0;0;0];
             % TODO rewrite so that I don't use this block, or rewrite
             % using blocks but keeping original state order
             % Omegax,Omegay,Omegaz
@@ -88,7 +104,11 @@ classdef MomentumWheelActuator < handle
             self.integrator.updateDerivatives(A*x+B*u);
                
             % perform the update integration step
-            [self.time,self.states] = self.integrator.step();
+            [self.time,self.states] = self.integrator.step;
+            
+            % perform state calculations with new data
+            self.updateForces;
+            self.updateMoments;
 
             %update the writer
             self.writer.updateTime(self.time);
@@ -110,21 +130,28 @@ classdef MomentumWheelActuator < handle
         end;
         
         function updateMoments(self)
-            w = self.states(1:3);
-            Omega = self.states(4:6);
-            OmegaDot = self.states(7:9);
+            Omega = self.states([1 3 5]);
+            OmegaDot = self.states([2 4 6]);
             I = self.inertia;
-            self.moments = - ( I*OmegaDot + cross(w,I*Omega) );
+            self.moments = - ( I*OmegaDot + cross(self.w,I*Omega) );
         end
         
-        
         %%%  Force producer interface
-        function forces = getForces(~)
+        function forces = getForces(self)
             forces = self.forces;
         end
         
-        function moments = getMoments(~)
+        function moments = getMoments(self)
             moments = self.moments;
+        end
+        
+        %%% Mass producer interface
+        function mass = getMass(self)
+            mass = self.mass;
+        end
+        
+        function inertia = getInertia(self)
+            inertia = self.inertia;
         end
         
     end
