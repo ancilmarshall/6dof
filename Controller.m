@@ -11,6 +11,10 @@ classdef Controller < handle
        
        input; 
        output;
+       
+       ref = 0;
+       feedback = 0;
+       error = 0;
    end
    
    properties (Access = private)
@@ -20,6 +24,8 @@ classdef Controller < handle
        outputVars = {...
            'input'
            'output'
+           'ref'
+           'error'
        };
    end
    
@@ -29,7 +35,7 @@ classdef Controller < handle
            
            self.a = getappdata(0,'config_control_a');
            self.b = getappdata(0,'config_control_b');
-              
+           
            %normalize
            if self.a(1) ~= 1 
                factor = self.a(1);
@@ -49,15 +55,23 @@ classdef Controller < handle
             % write the first set of data. Could argue ghat this can be
             % done upon construction. 
             self.writer.updateTime(self.time);
-            outputData = [self.input(self.order+1) self.output(self.order+1)];
+            outputData = [self.input(self.order+1) ...
+                self.output(self.order+1) ...
+                self.ref ...
+                self.feedback ...
+                self.error];
             self.writer.updateData(outputData);
            
        end
        
        function out = step(self)
            
-           % input
-           in = getappdata(0,'data_control_input');
+           % input (control loop here also)
+           self.ref = getappdata(0,'data_control_ref');
+           self.feedback = getappdata(0,'data_control_feedback');
+           self.error = self.ref-self.feedback;
+           in = self.error;
+           %in = getappdata(0,'data_control_input');
            
            k = self.order+1;
            u = self.input;
@@ -77,7 +91,7 @@ classdef Controller < handle
            end
            y(k) = tempb - tempa;
            
-           % case for order = 2, k=3
+           % case for order = 2 -> k=3
            %y(k) = self.b(1)*u(k) + self.b(2)*u(k-1) + self.b(3)*u(k-2) ...
            %                      - self.a(2)*y(k-1) - self.a(3)*y(k-2);
                            
@@ -94,7 +108,11 @@ classdef Controller < handle
            self.output = y;           
            self.time = self.time + self.dt;
            
-           outputData = [in,out];
+           outputData = [self.input(self.order+1) ...
+                self.output(self.order+1) ...
+                self.ref ...
+                self.feedback ...
+                self.error];
            self.writer.updateTime(self.time);
            self.writer.updateData(outputData);
            
@@ -106,6 +124,9 @@ classdef Controller < handle
            self.writer.write;
        end
        
+       function cmd = getCommand(self)
+           cmd = self.output(self.order+1);
+       end
        
    end
     
