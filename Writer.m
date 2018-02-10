@@ -9,16 +9,17 @@ classdef Writer < handle
     end
     
     properties (Access = private)
-        numdata
+        numdata;
+        getDataCallback;
     end
     
     methods
         
-        % TODO: initial with initial time,data
-        function self = Writer(prefix,dataLabels)
+        function self = Writer(prefix,dataLabels,getDataCallback)
             self.prefix = prefix;
             self.dataLabels = dataLabels;
             self.numdata = length(dataLabels);
+            self.getDataCallback = getDataCallback;
         end
         
         function updateTime(self,time)
@@ -36,8 +37,20 @@ classdef Writer < handle
             else
                 self.data(end+1,:) = data;
             end
-            
         end
+        
+        function step(self)
+           stepData = self.getDataCallback();
+           self.updateTime(stepData(1));
+           self.updateData(stepData(2:end));
+        end
+        
+        % Use setter to execute the step function immediately
+        function set.getDataCallback(self,value)
+           self.getDataCallback = value;
+           self.step;
+        end
+           
         
         function write(self)
             assignin('base',[self.prefix '_time'],self.time);

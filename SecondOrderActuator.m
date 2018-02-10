@@ -58,14 +58,9 @@ classdef SecondOrderActuator < handle
             
             %%% fixme - the number of integration states vs input data
             self.integrator = Integrator(self.states,self.dt);
-            self.writer = Writer(self.name,self.outputVars);
-            
-            % write the first set of data. Could argue ghat this can be
-            % done upon construction. 
-            self.writer.updateTime(self.time);
-            
-            self.writer.updateData(self.states);
-            
+            self.writer = Writer(self.name,self.outputVars, ...
+               @() [self.time;self.states]);
+           
             self.numStates = length(states);
         end
         
@@ -95,8 +90,7 @@ classdef SecondOrderActuator < handle
             self.updateMoments;
 
             %update the writer
-            self.writer.updateTime(self.time);
-            self.writer.updateData(self.states);
+            self.writer.step;
             
 %             for i=1:length(self.consumers)
 %                 consumer = self.consumers(i);

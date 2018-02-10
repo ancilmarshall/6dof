@@ -1,4 +1,4 @@
-classdef MomentumWheelActuator < handle
+classdef MomentumWheelActuator < handle & IWriter
     % assume 3 actuators aligned with the body x y z axis
     
     properties
@@ -17,9 +17,6 @@ classdef MomentumWheelActuator < handle
         forces = [0;0;0];
         moments = [0;0;0];
         
-        writer; % writer saves time history of states in arrays so that
-                % this object does not have to. The writer class can be 
-                % generic and used by several objects
     end
     
     properties (Access = private )
@@ -62,13 +59,8 @@ classdef MomentumWheelActuator < handle
             
             %%% fixme - the number of integration states vs input data
             self.integrator = Integrator(self.states,self.dt);
-            self.writer = Writer(self.name,self.outputVars);
-            
-            % write the first set of data. Could argue ghat this can be
-            % done upon construction. 
-            self.writer.updateTime(self.time);
-            
-            self.writer.updateData(self.states);
+            self.writer = Writer(self.name,self.outputVars,...
+               @()[self.time;self.states]);
             
             self.numStates = length(states);
         end
@@ -119,10 +111,6 @@ classdef MomentumWheelActuator < handle
 %                 consumer.updateStates(self.states)
 %             end
             
-        end
-        
-        function write(self)
-            self.writer.write;
         end
         
         function updateForces(self)

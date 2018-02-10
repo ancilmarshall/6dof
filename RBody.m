@@ -1,4 +1,4 @@
-classdef RBody < IProducer
+classdef RBody < IProducer & IWriter
     properties
         
         % get from mass producer
@@ -9,10 +9,7 @@ classdef RBody < IProducer
         dt;
         time;
         states = [];      
-        writer; % writer saves time history of states in arrays so that
-                % this object does not have to. The writer class can be 
-                % generic and used by several objects
-        
+
         act; % for testing the actuator producer. 
     end
     
@@ -41,12 +38,8 @@ classdef RBody < IProducer
             self.dt = dt;
             
             self.integrator = Integrator(self.states,self.dt);
-            self.writer = Writer(self.name,self.outputVars);
-            
-            % write the first set of data. Could argue ghat this can be
-            % done upon construction. 
-            self.writer.updateTime(self.time);
-            self.writer.updateData(self.states);
+            self.writer = Writer(self.name,self.outputVars, ...
+               @() [self.time;self.states]);
             
             self.numStates = length(states);
         end
@@ -83,8 +76,7 @@ classdef RBody < IProducer
             [self.time,self.states] = self.integrator.step();
             
             %update the writer
-            self.writer.updateTime(self.time);
-            self.writer.updateData(self.states)
+            self.writer.step;
             
             for i=1:length(self.consumers)
                 consumer = self.consumers(i);
@@ -95,10 +87,6 @@ classdef RBody < IProducer
             setappdata(0,'data_rbody_q',omega(2));
             setappdata(0,'data_rbody_r',omega(3));
             
-        end
-        
-        function write(self)
-            self.writer.write();
         end
         
     end

@@ -1,5 +1,5 @@
 clear;
-%close all;
+close all;
 
 t0 = 0;
 t1 = 1;

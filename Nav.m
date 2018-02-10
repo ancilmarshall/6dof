@@ -34,10 +34,8 @@ classdef Nav < IConsumer
         function self = Nav(dt)
             self.time = 0;
             self.dt = dt;
-            self.writer = Writer(self.prefix,self.outputLabels);
-            self.writer.updateTime(self.time);
-            self.updateOutput();
-            self.writer.updateData(self.output);
+            self.writer = Writer(self.prefix,self.outputLabels,...
+               @()[self.time;self.output]);
         end
         
         function updateOutput(self)
@@ -95,8 +93,7 @@ classdef Nav < IConsumer
             self.updateOutput();
             
             %update the writer
-            self.writer.updateTime(self.time);
-            self.writer.updateData(self.output)
+            self.writer.step;
                         
         end
         
