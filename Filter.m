@@ -1,6 +1,6 @@
-classdef Controller < handle
+classdef Filter < handle
     
-   % second order digital filter to be used in a controller
+   % n order digital filter implementation
     
    properties
        a
@@ -12,29 +12,26 @@ classdef Controller < handle
        input; 
        output;
        
-       ref = 0;
-       feedback = 0;
-       error = 0;
    end
    
    properties (Access = private)
-       order = 2;
+       order;
        writer;
-       name = 'control';
+       name = 'filter';
        outputVars = {...
            'input'
            'output'
-           'ref'
-           'error'
        };
    end
    
    methods
       
-       function self = Controller(dt)
+       function self = Filter(dt)
            
            self.a = getappdata(0,'config_control_a');
            self.b = getappdata(0,'config_control_b');
+           
+           self.order = length(self.a)-1;
            
            %normalize
            if self.a(1) ~= 1 
@@ -55,23 +52,15 @@ classdef Controller < handle
             % write the first set of data. Could argue ghat this can be
             % done upon construction. 
             self.writer.updateTime(self.time);
-            outputData = [self.input(self.order+1) ...
-                self.output(self.order+1) ...
-                self.ref ...
-                self.feedback ...
-                self.error];
+            outputData = [self.input(self.order+1) self.output(self.order+1) ];
             self.writer.updateData(outputData);
            
        end
        
        function out = step(self)
            
-           % input (control loop here also)
-           self.ref = getappdata(0,'data_control_ref');
-           self.feedback = getappdata(0,'data_control_feedback');
-           self.error = self.ref-self.feedback;
-           in = self.error;
-           %in = getappdata(0,'data_control_input');
+           % input 
+           in = getappdata(0,'data_filter_input');
            
            k = self.order+1;
            u = self.input;
@@ -108,11 +97,7 @@ classdef Controller < handle
            self.output = y;           
            self.time = self.time + self.dt;
            
-           outputData = [self.input(self.order+1) ...
-                self.output(self.order+1) ...
-                self.ref ...
-                self.feedback ...
-                self.error];
+           outputData = [self.input(self.order+1) self.output(self.order+1) ]; 
            self.writer.updateTime(self.time);
            self.writer.updateData(outputData);
            

@@ -1,5 +1,6 @@
-% control the actuator cmd to achieve an actuator rate
-clear all;
+% control the actuator cmd to achieve an actuator position
+% use a digital filter based on a PI compensator
+clear;
 close all;
 
 zeta = 0.707;% (critically damped)
@@ -14,19 +15,20 @@ D = 0;
 
 [num,den]=ss2tf(A,B,C,D);
 G = tf(num,den);
-
 s = tf('s');
-C = 35*(1+0.055*s)/s^2;
-
-dt = 0.01;
+C = 0.55*(s+104)/s;
+dt = 0.002; % NOTE: Need to run at high rate b/c actuator BW is high 25Hz
 Cd = c2d(C,dt);
 
-L = C*G;
+% add zero order hold lag
+[num,den] = pade(dt/2,2);
+G_lag = tf(num,den);
+L = C*G*G_lag;
 T = L/(1+L);
 
 % test in 6DOF Simulation the a SecondOrderActuator
 t0 = 0;
-t1 = 1;
+t1 = 0.1;
 t = (t0:dt:t1)';
 u = ones(length(t),1);
 sys = ss(T);
@@ -38,7 +40,6 @@ yout = lsim(sys,u,t);
 %   ----------------
 %    z^2 - 2 z + 1
 
-
 %%% Configuration
 
 setappdata(0,'config_act_zeta',zeta); % (critically damped)
@@ -48,23 +49,36 @@ setappdata(0,'config_control_a',Cd.Denominator{:});
 
 actuatorStates = [0 0]';
 act = SecondOrderActuator(actuatorStates,dt);
-comp = Controller(dt);
+filter = Filter(dt);
 
 % register producers
 
 % register consumers
-act.controller = comp;
+act.controller = filter;
 
-while comp.time < t1
+while filter.time < t1
     act.step;
-    setappdata(0,'data_control_ref',1);
-    setappdata(0,'data_control_feedback',getappdata(0,'data_act_OmegaDot'));
-    comp.step;
+    feedback = getappdata(0,'data_act_Omega');
+    ref = 1;
+    error = ref-feedback;
+    setappdata(0,'data_filter_input',error);
+    filter.step;
 end
 
 % write the output
-comp.write;
+filter.write;
 act.write;
 
+figure;
+plot(t,yout,'b');
+hold on;
+plot(act_time,act_Omega,'r');
+grid on;
+xlim([0 t1]);
+ylim([0 1.2]);
+legend('Exact solution','Simulation');
+xlabel('Time (sec)');
+ylabel('\Omega (rad/s)');
+title('Actuator Speed Control - Control on \Omega');
 
 
