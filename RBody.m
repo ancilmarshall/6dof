@@ -47,6 +47,7 @@ classdef RBody < IProducer & IWriter
         function registerIntegrator(self,integrator)
             self.integrator = integrator;
         end
+        
         function step(self)
             
             v = self.states(1:3);
