@@ -5,8 +5,10 @@ classdef RBody5D < handle & IWriter
         integrator;
         dt;
         time;
-        states = [];      
-
+        states = [];     
+        
+        velocityXController;
+        velocityYController;
     end
     
     properties (Access = private )
@@ -67,16 +69,19 @@ classdef RBody5D < handle & IWriter
             p = self.states(8);
 
             % control input
-            theta_cmd = getappdata(0,'data_control_thetaCmd');
-            phi_cmd = getappdata(0,'data_control_phiCmd');
+            theta_cmd = self.velocityXController.getCommand;
+            phi_cmd = 0;%self.velocityYController.getCommand;
             
             % X-dir nonlinear equations
             xdot(1,1) = vx;
             xdot(2,1) = -self.Cx*vx - self.G*tan(theta);
             xdot(3,1) = q;
+            try
             xdot(4,1) = -self.wn^2*theta - ...
                2*self.zeta*self.wn*q + self.wn^2*theta_cmd;
-            
+            catch
+               disp('error')
+            end
             % Y-dir nonlinear equations
             xdot(5,1) = vy;
             xdot(6,1) = - self.Cy*vy - self.G*tan(phi);
@@ -97,6 +102,10 @@ classdef RBody5D < handle & IWriter
 %             end
             
             %%% output
+            setappdata(0,'data_rbody5d_x',x);
+            setappdata(0,'data_rbody5d_y',y);
+            setappdata(0,'data_rbody5d_vx',vx);
+            setappdata(0,'data_rbody5d_vy',vy);
             
         end
         
