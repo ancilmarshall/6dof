@@ -10,7 +10,7 @@ classdef ControllerPID < handle & IWriter
       error = 0;
       dt = 0;
       time = 0;
-     
+
    end
    
    properties (Access = private)
@@ -33,19 +33,16 @@ classdef ControllerPID < handle & IWriter
    
    methods
       
-      function self = ControllerPID(dt)
+      function self = ControllerPID(name,dt)
          
          %config
          self.kp = getappdata(0,'config_control_kp');
          self.ki = getappdata(0,'config_control_ki');
          self.kd = getappdata(0,'config_control_kd');
                  
-         %try
          self.dt = dt;
-         %catch
-            %disp('error');
-         %end
          self.time = 0;
+         self.name = name;
          
          self.writer = Writer(self.name,self.outputVars, ...
             @() [ self.time ...
@@ -75,7 +72,7 @@ classdef ControllerPID < handle & IWriter
          
          out = self.control;
          
-         %self.writer.step;
+         self.writer.step;
          
       end
       

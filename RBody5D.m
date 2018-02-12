@@ -69,22 +69,19 @@ classdef RBody5D < handle & IWriter
             p = self.states(8);
 
             % control input
-            theta_cmd = self.velocityXController.getCommand;
-            phi_cmd = 0;%self.velocityYController.getCommand;
+            theta_cmd = self.velocityXController.getCommand();
+            phi_cmd = self.velocityYController.getCommand;
             
             % X-dir nonlinear equations
             xdot(1,1) = vx;
             xdot(2,1) = -self.Cx*vx - self.G*tan(theta);
             xdot(3,1) = q;
-            try
             xdot(4,1) = -self.wn^2*theta - ...
                2*self.zeta*self.wn*q + self.wn^2*theta_cmd;
-            catch
-               disp('error')
-            end
+
             % Y-dir nonlinear equations
             xdot(5,1) = vy;
-            xdot(6,1) = - self.Cy*vy - self.G*tan(phi);
+            xdot(6,1) = - self.Cy*vy + self.G*tan(phi);
             xdot(7,1) = p;
             xdot(8,1) = -self.wn^2*phi - ...
                2*self.zeta*self.wn*p + self.wn^2*phi_cmd;

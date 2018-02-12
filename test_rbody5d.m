@@ -35,11 +35,11 @@ rbody = RBody5D(states,dt);
 
 % sim
 while rbody.time < tf
-   rbody.step;
+   rbody.step();
 end
 
 % write
-rbody.write;
+rbody.write();
 
 figure;
 plotg(rbody_time,rbody_theta*180/pi);
