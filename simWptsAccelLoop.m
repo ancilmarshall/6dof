@@ -1,4 +1,4 @@
-% test of the 5D equations of motion in NED ( z assumed constant ) 
+% Perform cross track guidance with a Velocity Loop
 clear;
 close all;
 
@@ -6,7 +6,7 @@ global Cx Cy G wn zeta thetaCmd phiCmd
 
 % config
 t0 = 0;
-tf = 10;
+tf = 40;
 dt = 0.005;
 
 Cx = 0.35;  % s-1
@@ -28,34 +28,36 @@ setappdata(0,'config_aero_Cx',Cx);
 setappdata(0,'config_aero_Cy',Cy);
 setappdata(0,'config_env_G',G);
 
-setappdata(0,'config_control_kp',0.2612);
-setappdata(0,'config_control_ki',0.1606);
-setappdata(0,'config_control_kd',0);
-setappdata(0,'data_control_controlFF',0);
-
-wpt = [10 5 0]';
-setappdata(0,'data_guidance_wpt',wpt);
-
 % objects
 rbody = RBody5D(states,dt);
-velocityLoop = VelocityLoop(dt);
-guidance = GuidanceLoop(dt);
+accelLoop = AccelLoop(dt);
+guidance = AccelGuidanceLoop(dt);
 
 % producer registration
-rbody.velocityLoop = velocityLoop;
-velocityLoop.guidance = guidance;
+rbody.angleCommandProducer = accelLoop;
+accelLoop.guidance = guidance;
+
+% need to set this to properly init the guidance loop
+waypointManager = WaypointManager;
+waypointManager.add([10 5 0]');
+waypointManager.add([20 5 0]');
+waypointManager.add([30 0 0]');
+waypointManager.add([40 0 0]');
+
+guidance.setWaypointManager(waypointManager);
+
 
 
 % sim
 while rbody.time < tf
    rbody.step;
-   velocityLoop.step;
+   accelLoop.step;
    guidance.step;
 end
 
 % write
 rbody.write;
-velocityLoop.write;
+accelLoop.write;
 guidance.write;
 
 % response
@@ -63,29 +65,25 @@ figure;
 subplot(211);
 plotg(rbody_time,rbody_theta*180/pi);
 hold on;
-plotg(rbody_time,velocityLoop_thetaCmd*180/pi,'r--');
+%plotg(rbody_time,accelLoop_thetaCmd*180/pi,'r--');
 ylabel('Theta (deg)');
 title('Body Theta');
 subplot(212);
 plotg(rbody_time,rbody_phi*180/pi);
 hold on;
-plotg(rbody_time,velocityLoop_phiCmd*180/pi,'r--');
+%plotg(rbody_time,accelLoop_phiCmd*180/pi,'r--');
 ylabel('Phi (deg)');
 title('Body Phi');
 xlabel('Time (sec)');
 
-
+% 
 figure;
 subplot(211);
 plotg(rbody_time,rbody_vx);
 hold on;
-plotg(guidance_time,guidance_vxCmd,'r--');
-ylabel('vx (m/s)');
 title('Velocity X response');
 subplot(212);
 plotg(rbody_time,rbody_vy);
-hold on;
-plotg(guidance_time,guidance_vyCmd,'r--');
 ylabel('vy (m/s)');
 title('Velocity Y response');
 
@@ -96,8 +94,10 @@ plotg(rbody_y,rbody_x);
 title('Ground track');
 axis equal
 hold on;
-plot(wpt(2),wpt(1),'ro');
-plot([0 wpt(2)],[0 wpt(1)],'k--');
+wpts = waypointManager.wptArray;
+plotg(wpts(:,2),wpts(:,1),'k--');
+plotg(wpts(:,2),wpts(:,1),'ro');
+
 
 % cross track error
 figure;

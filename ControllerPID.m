@@ -8,8 +8,10 @@ classdef ControllerPID < handle & IWriter
       ki = 0;
       kd = 0;
       error = 0;
+      prev_error = 0;
       dt = 0;
       time = 0;
+      controlFF = 0;
 
    end
    
@@ -17,7 +19,6 @@ classdef ControllerPID < handle & IWriter
       controlProp = 0;
       controlInt = 0;
       controlDeriv = 0;
-      controlFF = 0;
       control = 0;
       
       name = 'controller';
@@ -34,11 +35,6 @@ classdef ControllerPID < handle & IWriter
    methods
       
       function self = ControllerPID(name,dt)
-         
-         %config
-         self.kp = getappdata(0,'config_control_kp');
-         self.ki = getappdata(0,'config_control_ki');
-         self.kd = getappdata(0,'config_control_kd');
                  
          self.dt = dt;
          self.time = 0;
@@ -55,23 +51,18 @@ classdef ControllerPID < handle & IWriter
                   
       end
             
-      function out = step(self)
-         
-         % input
-%          self.error = getappdata(0,'data_control_error');
-         self.controlFF = getappdata(0,'data_control_controlFF');
-         
+      function step(self)
+                  
          % PID
          self.controlProp = self.kp * self.error;
          self.controlInt = self.controlInt + self.ki * self.error * self.dt;
-         self.controlDeriv = 0;
+         self.controlDeriv = self.kd * (self.error-self.prev_error)/self.dt;
          
          self.control = self.controlProp + self.controlDeriv + ... 
             self.controlInt + self.controlFF;
          self.time = self.time + self.dt;
-         
-         out = self.control;
-         
+                  
+         self.prev_error = self.error;
          self.writer.step;
          
       end

@@ -7,8 +7,8 @@ classdef RBody5D < handle & IWriter
         time;
         states = [];     
         
-        velocityXController;
-        velocityYController;
+        %producer
+        angleCommandProducer;
     end
     
     properties (Access = private )
@@ -20,6 +20,9 @@ classdef RBody5D < handle & IWriter
         Cy
         G;
         
+        ax = 0;
+        ay = 0;
+        
         outputVars = {
             'x'
             'vx'
@@ -29,6 +32,8 @@ classdef RBody5D < handle & IWriter
             'vy'
             'phi'
             'p'
+            'ax'
+            'ay'
             };
     end
 
@@ -41,7 +46,7 @@ classdef RBody5D < handle & IWriter
             
             self.integrator = Integrator(self.states,self.dt);
             self.writer = Writer(self.name,self.outputVars, ...
-               @() [self.time;self.states]);
+               @() [self.time;self.states;self.ax;self.ay]);
             
             % get config data
             self.wn = getappdata(0,'config_act_wn');
@@ -69,8 +74,8 @@ classdef RBody5D < handle & IWriter
             p = self.states(8);
 
             % control input
-            theta_cmd = self.velocityXController.getCommand();
-            phi_cmd = self.velocityYController.getCommand;
+            theta_cmd = self.angleCommandProducer.thetaCmd;
+            phi_cmd = self.angleCommandProducer.phiCmd;
             
             % X-dir nonlinear equations
             xdot(1,1) = vx;
@@ -90,6 +95,17 @@ classdef RBody5D < handle & IWriter
             self.integrator.updateDerivatives(xdot);
             [self.time,self.states] = self.integrator.step;
             
+            %update calculated variables
+            
+            vx = self.states(2);
+            theta = self.states(3);
+            self.ax = -self.Cx - self.G*tan(theta);
+            
+            vy = self.states(6);
+            phi = self.states(7);
+            self.ay = -self.Cy + self.G*tan(phi);
+            
+            
             %update the writer
             self.writer.step;
             
@@ -99,10 +115,14 @@ classdef RBody5D < handle & IWriter
 %             end
             
             %%% output
-            setappdata(0,'data_rbody5d_x',x);
-            setappdata(0,'data_rbody5d_y',y);
-            setappdata(0,'data_rbody5d_vx',vx);
-            setappdata(0,'data_rbody5d_vy',vy);
+            setappdata(0,'data_rbody_x',x);
+            setappdata(0,'data_rbody_y',y);
+            setappdata(0,'data_rbody_vx',vx);
+            setappdata(0,'data_rbody_vy',vy);
+            setappdata(0,'data_rbody_ax',self.ax);
+            setappdata(0,'data_rbody_ay',self.ay);
+            setappdata(0,'data_rbody_theta',theta);
+            setappdata(0,'data_rbody_phi',phi);
             
         end
         
