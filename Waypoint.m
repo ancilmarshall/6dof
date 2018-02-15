@@ -7,6 +7,7 @@ classdef Waypoint
       z = 0;
       safe = false;
       index = 0;
+      time = 0; % time above which wpt is active
    end
    
    methods

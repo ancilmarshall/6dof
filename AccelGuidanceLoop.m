@@ -25,10 +25,15 @@ classdef AccelGuidanceLoop < handle & IWriter
       y = 0;
       
       % config (guess)
-      kp = 2;
-      ki = 0;
-      kd = 4;
+%       kp = 2;
+%       ki = 0;
+%       kd = 4;
       
+      % how can this be done in using sisotools (Design)
+      kp = 1;
+      ki = 0;
+      kd = 2;
+
       % consumer
       accelLoop;
       

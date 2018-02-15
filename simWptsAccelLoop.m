@@ -1,5 +1,5 @@
 % Perform cross track guidance with a Velocity Loop
-clear;
+clear all;
 close all;
 
 global Cx Cy G wn zeta thetaCmd phiCmd
@@ -65,13 +65,13 @@ figure;
 subplot(211);
 plotg(rbody_time,rbody_theta*180/pi);
 hold on;
-%plotg(rbody_time,accelLoop_thetaCmd*180/pi,'r--');
+plotg(rbody_time,accelLoop_thetaCmd*180/pi,'r--');
 ylabel('Theta (deg)');
 title('Body Theta');
 subplot(212);
 plotg(rbody_time,rbody_phi*180/pi);
 hold on;
-%plotg(rbody_time,accelLoop_phiCmd*180/pi,'r--');
+plotg(rbody_time,accelLoop_phiCmd*180/pi,'r--');
 ylabel('Phi (deg)');
 title('Body Phi');
 xlabel('Time (sec)');
@@ -105,6 +105,17 @@ plotg(guidance_time,guidance_crossTrackError);
 title('Cross Track Error');
 xlabel('Time (sec)');
 ylabel('Cross Track Error (m)');
+
+figure;
+subplot(211)
+plotg(rbody_time,rbody_ax);
+title('Accel X response');
+ylabel('Accel X (m/s^2)');
+subplot(212);
+plotg(rbody_time,rbody_ay);
+title('Accel Y response');
+ylabel('Accel Y (m/s^2)');
+
 
 fanfigs;
 

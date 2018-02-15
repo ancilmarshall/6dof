@@ -1,12 +1,12 @@
 % Perform cross track guidance with a Velocity Loop
-clear;
+clear all;
 close all;
 
 global Cx Cy G wn zeta thetaCmd phiCmd
 
 % config
 t0 = 0;
-tf = 25;
+tf = 20;
 dt = 0.005;
 
 Cx = 0.35;  % s-1

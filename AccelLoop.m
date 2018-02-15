@@ -70,7 +70,7 @@ classdef AccelLoop < handle & IWriter
          self.accelYController.kp = self.kp;
          self.accelYController.ki = self.ki;
          self.accelYController.kd = self.kd;
-         
+                  
          self.Cx = getappdata(0,'config_aero_Cx');
          self.Cy = getappdata(0,'config_aero_Cy');
          self.G = getappdata(0,'config_env_G');
@@ -122,6 +122,16 @@ classdef AccelLoop < handle & IWriter
          thetaFF = - atan2(self.axRef + self.Cx*self.vx, self.G);
          phiFF = atan2(self.ayRef + self.Cy*self.vy, self.G);
           
+         % feedfward from colibry (to compare). Works out to same
+%          accel = [self.axRef self.ayRef]';
+%          C = [self.Cx self.Cy]';
+%          v = [self.vx self.vy]';
+%          F = accel + C.*v;
+%          Fnorm = norm(F);
+%          beta = atan2(Fnorm,self.G);
+%          thetaFF = -beta*F(1)/Fnorm;
+%          phiFF = beta*F(2)/Fnorm;
+         
          self.accelXController.controlFF = thetaFF;
          self.accelYController.controlFF = phiFF;
    

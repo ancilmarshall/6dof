@@ -82,7 +82,9 @@ title('Velocity Y response');
 figure;
 subplot(211)
 plotg(rbody_time,rbody_ax);
-
+title('Accel X response');
+ylabel('Accel X (m/s^2)');
 subplot(212);
 plotg(rbody_time,rbody_ay);
-
+title('Accel Y response');
+ylabel('Accel Y (m/s^2)');

@@ -39,10 +39,10 @@ setappdata(0,'data_guidance_wpt',wpt);
 % objects
 rbody = RBody5D(states,dt);
 velocityLoop = VelocityLoop(dt);
-guidance = GuidanceLoop(dt);
+guidance = VelocityGuidanceLoop(dt);
 
 % producer registration
-rbody.velocityLoop = velocityLoop;
+rbody.angleCommandProducer = velocityLoop;
 velocityLoop.guidance = guidance;
 
 
