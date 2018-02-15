@@ -99,12 +99,11 @@ classdef RBody5D < handle & IWriter
             
             vx = self.states(2);
             theta = self.states(3);
-            self.ax = -self.Cx - self.G*tan(theta);
+            self.ax = -self.Cx*vx - self.G*tan(theta);
             
             vy = self.states(6);
             phi = self.states(7);
-            self.ay = -self.Cy + self.G*tan(phi);
-            
+            self.ay = -self.Cy*vy + self.G*tan(phi);
             
             %update the writer
             self.writer.step;
@@ -115,6 +114,22 @@ classdef RBody5D < handle & IWriter
 %             end
             
             %%% output
+            self.setOutputData;
+            
+        end
+        
+        function setOutputData(self)
+           
+            x = self.states(1);
+            vx = self.states(2);
+            theta = self.states(3);
+            q = self.states(4);
+            y = self.states(5);
+            vy = self.states(6);
+            phi = self.states(7);
+            p = self.states(8);
+
+           
             setappdata(0,'data_rbody_x',x);
             setappdata(0,'data_rbody_y',y);
             setappdata(0,'data_rbody_vx',vx);
@@ -122,8 +137,7 @@ classdef RBody5D < handle & IWriter
             setappdata(0,'data_rbody_ax',self.ax);
             setappdata(0,'data_rbody_ay',self.ay);
             setappdata(0,'data_rbody_theta',theta);
-            setappdata(0,'data_rbody_phi',phi);
-            
+            setappdata(0,'data_rbody_phi',phi);           
         end
         
     end

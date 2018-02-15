@@ -6,7 +6,7 @@ global Cx Cy G wn zeta thetaCmd phiCmd
 
 % config
 t0 = 0;
-tf = 2;
+tf = 3;
 dt = 0.005;
 
 Cx = 0.35;  % s-1
@@ -31,9 +31,15 @@ setappdata(0,'config_env_G',G);
 % objects
 rbody = RBody5D(states,dt);
 accelLoop = AccelLoop(dt);
+guidance = AccelGuidanceLoop(dt);
 
 % producer registration
 rbody.angleCommandProducer = accelLoop;
+accelLoop.guidance = guidance;
+
+% set the guidance command
+guidance.axCmd = 1;
+guidance.ayCmd = 0;
 
 % sim
 while rbody.time < tf

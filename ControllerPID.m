@@ -12,14 +12,14 @@ classdef ControllerPID < handle & IWriter
       dt = 0;
       time = 0;
       controlFF = 0;
-
-   end
-   
-   properties (Access = private)
       controlProp = 0;
       controlInt = 0;
       controlDeriv = 0;
       control = 0;
+   end
+   
+   properties (Access = private)
+
       
       name = 'controller';
       outputVars = {

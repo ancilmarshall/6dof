@@ -27,7 +27,7 @@ classdef VelocityGuidanceLoop < handle & IWriter
       % config (guess)
       kp = 3;
       ki = 0.5;
-      kd = 1;
+      kd = 2;
       
       % consumer
       velocityLoop;
