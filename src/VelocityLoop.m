@@ -92,8 +92,8 @@ classdef VelocityLoop < handle & IWriter
          self.velocityXController.step;
          self.velocityYController.step;
          
-         self.thetaCmd  = self.velocityXController.getCommand;
-         self.phiCmd = self.velocityYController.getCommand;
+         self.thetaCmd  = self.velocityXController.getCommand *pi/180;
+         self.phiCmd = self.velocityYController.getCommand *pi/180;
          
          self.time = self.time + self.dt;
          % output

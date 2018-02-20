@@ -1,0 +1,124 @@
+classdef BrakingVelocityGuidanceLoop < handle & IWriter
+   
+   
+   properties
+      
+      dt = 0;
+      time = 0;
+      
+      name = 'guidance';
+
+      % taken from the quick Colibry implementation
+      dmax = 4.0; 
+      amax = 4.5;
+      
+      uref_filt = 0.0;
+      dist = 0.0;
+      distanceToGo = 0.0;
+      brakingDistance = 0.0;
+      brakingVelocity = 0.0;
+      brakingVelocityFilt = 0.0;
+      
+      %flags
+      isVelocityCmdZero = false;
+      filter_initialized = false;
+      
+      outputVars = {
+         'distanceToGo'
+         'brakingDistance'
+         'brakingVelocity'
+         'brakingVelocityFilt'
+      };
+                  
+   end
+   
+   methods
+      
+      function self = BrakingVelocityGuidanceLoop(dt)
+         self.dt = dt;
+         
+         self.writer = Writer(self.name, self.outputVars, ...
+            @() [ self.time ...
+                  self.distanceToGo ...
+                  self.brakingDistance ...
+                  self.brakingVelocity ...
+                  self.brakingVelocityFilt ]');
+      end
+      
+      
+      function setWaypointManager(self,manager)
+         self.waypointManager = manager;
+         self.nextWpt = self.waypointManager.next;
+         self.updateNextPath(self.nextWpt);
+      end
+      
+      function step(self)
+         
+         %inputs
+         currentState = getappdata(0,'data_logic_currentState');
+         speedHoriz_x = getappdata(0,'data_rbody_vx');
+         speedHoriz_y = getappdata(0,'data_rbody_vy');
+         speedHoriz = [speedHoriz_x speedHoriz_y];
+         
+
+         dist_to_go = max(self.dmax-self.dist,0.0);
+         uref = 0.0;
+         Ts = 0.005;
+         
+         tau = 0.3;
+         a = 1/tau;
+         
+         if (currentState == GOTOFIX_STATE)
+            
+            uref = sqrt(max(2*amx*(dist_to_go-tau*self.uref_filt),0.0));
+            if (norm(speedHoriz) < uref)
+               uref = norm(speedHoriz);
+            end
+            
+            if ( abs(uref-0.0) < 1e-9 )
+               self.isVelocityCmdZero = true;
+            end
+            
+            if (~self.filter_initialized)
+               self.uref_filt = norm(speedHoriz);
+               self.filter_initialized = true;
+            end
+            
+            self.uref_filt = (1-a*Ts)*self.uref_filt + a*Ts*uref;
+            
+            self.dist = self.dist + norm(speedHoriz) * Ts;
+            
+         else
+            self.isVelo
+         
+         
+         
+         self.vxCmd = uref;
+         self.vxCmd = self.userVxCmd;
+         
+         
+         
+     
+         
+         self.time = self.time + self.dt;
+         self.writer.step;
+      end
+         
+      function updateNextPath(self,nextWpt)
+         currentPos = [self.x, self.y, 0]';
+         self.fromWpt = currentPos; %or can use the prev wpt in the list
+         temp = nextWpt - currentPos;
+         self.nextPath = temp / norm(temp);         
+      end   
+      
+      
+      % override default implementation of the protocol (interface) class
+      function write(self)
+         self.crossTrackController.write;
+         self.writer.write;
+      end
+      
+   end
+      
+   
+end

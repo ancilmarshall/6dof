@@ -1,5 +1,5 @@
 classdef Filter < handle & IWriter
-   
+   %TODO: add ability to reset the filter
    % n order digital filter implementation
    
    properties
