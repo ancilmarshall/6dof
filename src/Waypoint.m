@@ -5,7 +5,7 @@ classdef Waypoint
       x = 0;
       y = 0;
       z = 0;
-      safe = false;
+      safe = true;
       index = 0;
       time = 0; % time above which wpt is active
    end
@@ -28,10 +28,17 @@ classdef Waypoint
             self.z = varargin{3};
             self.safe = varargin{4};
             self.index = varargin{5};
+         elseif nargin == 6
+            self.x = varargin{1};
+            self.y = varargin{2};
+            self.z = varargin{3};
+            self.safe = varargin{4};
+            self.index = varargin{5};
+            self.time = varargin{6};
          end
       end
       
-      function pos = getPositionNED(self)
+      function pos = getPosition(self)
          pos = [self.x self.y self.z];
       end
       

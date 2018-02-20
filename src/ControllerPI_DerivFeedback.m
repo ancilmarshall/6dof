@@ -1,4 +1,4 @@
-classdef ControllerPID < handle & IWriter
+classdef ControllerPI_DerivFeedback < handle & IWriter
    
    % n order digital filter implementation
    
@@ -8,7 +8,7 @@ classdef ControllerPID < handle & IWriter
       ki = 0;
       kd = 0;
       error = 0;
-      prev_error = 0;
+      deriv_error = 0;
       dt = 0;
       time = 0;
       controlFF = 0;
@@ -23,7 +23,6 @@ classdef ControllerPID < handle & IWriter
    end
    
    properties (Access = private)
-
       
       name = 'controller';
       outputVars = {
@@ -38,7 +37,7 @@ classdef ControllerPID < handle & IWriter
    
    methods
       
-      function self = ControllerPID(name,dt)
+      function self = ControllerPI_DerivFeedback(name,dt)
                  
          self.dt = dt;
          self.time = 0;
@@ -60,7 +59,7 @@ classdef ControllerPID < handle & IWriter
          % PID
          self.controlProp = self.kp * self.error;
          self.controlInt = self.controlInt + self.ki * self.error * self.dt;
-         self.controlDeriv = self.kd * (self.error-self.prev_error)/self.dt;
+         self.controlDeriv = self.kd * self.deriv_error;
          
          self.control = self.controlProp + self.controlDeriv + ... 
             self.controlInt + self.controlFF;
@@ -70,7 +69,6 @@ classdef ControllerPID < handle & IWriter
          self.control = min(self.control,self.controlMax);
          self.control = max(self.control,self.controlMin);
                   
-         self.prev_error = self.error;
          self.writer.step;
          
       end

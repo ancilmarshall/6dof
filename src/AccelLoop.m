@@ -1,6 +1,5 @@
 classdef AccelLoop < handle & IWriter
    
-   
    properties
       
       accelXController;
@@ -38,7 +37,7 @@ classdef AccelLoop < handle & IWriter
       
       % gains without feed forward gain
       kp = 0.025;
-      ki = 0.5;
+      ki = 0.3;
       kd = 0;
      
       % gains with feed forward gain
@@ -62,7 +61,12 @@ classdef AccelLoop < handle & IWriter
          
          self.accelXController = ControllerPID('axLoopPID',dt);
          self.accelYController = ControllerPID('ayLoopPID',dt);
-             
+         
+         self.accelXController.controlMax =  20*pi/180;
+         self.accelXController.controlMin = -20*pi/180;
+         self.accelYController.controlMax =  20*pi/180;
+         self.accelYController.controlMin = -20*pi/180;
+        
          self.accelXController.kp = self.kp;
          self.accelXController.ki = self.ki;
          self.accelXController.kd = self.kd;

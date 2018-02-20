@@ -1,5 +1,5 @@
 % Perform cross track guidance with a Velocity Loop
-clear all;
+% clear all;
 close all;
 
 global Cx Cy G wn zeta thetaCmd phiCmd
