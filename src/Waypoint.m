@@ -1,4 +1,4 @@
-classdef Waypoint 
+classdef Waypoint < handle
    
    properties
       % ned values
@@ -8,6 +8,9 @@ classdef Waypoint
       safe = true;
       index = 0;
       time = 0; % time above which wpt is active
+      
+      position;
+      
    end
    
    methods
@@ -38,9 +41,25 @@ classdef Waypoint
          end
       end
       
-      function pos = getPosition(self)
-         pos = [self.x self.y self.z];
+      function setPosition(self,value)
+         self.position = [value(1) value(2) value(3)]';
+         self.x = value(1);
+         self.y = value(2);
+         self.z = value(3);
       end
+            
+      function value = get.position(self)
+         value = [self.x self.y self.z]';
+      end
+      
+      function value = plus(obj1,obj2)
+         value = obj1.position + obj2.position;
+      end
+      
+      function value = minus(obj1,obj2)
+         value = obj1.position - obj2.position;
+      end
+      
       
    end
    

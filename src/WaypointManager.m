@@ -25,8 +25,8 @@ classdef WaypointManager < handle
       function array = wptArray(self)
          array = zeros(length(self.waypoints)+1,2);
          for i=1:length(array)-1
-            array(i+1,1) = self.waypoints{i}(1);
-            array(i+1,2) = self.waypoints{i}(2);
+            array(i+1,1) = self.waypoints{i}.x;
+            array(i+1,2) = self.waypoints{i}.y;
          end
          
       end

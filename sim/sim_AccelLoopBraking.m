@@ -6,7 +6,7 @@ global Cx Cy G wn zeta thetaCmd phiCmd
 
 % config
 t0 = 0;
-tf = 8;
+tf = 30;
 dt = 0.005;
 
 Cx = 0.35;  % s-1
@@ -39,7 +39,11 @@ accelLoop.guidance = guidance;
 
 % need to set this to properly init the guidance loop
 waypointManager = WaypointManager;
-waypointManager.add([5 0.5 0]');
+waypointManager.add(Waypoint(10,5,0)); %false = not safe, must stop
+waypointManager.add(Waypoint(20,0,0)); %false = not safe, must stop
+waypointManager.add(Waypoint(30,0,0)); %false = not safe, must stop
+waypointManager.add(Waypoint(40,10,0,false)); %false = not safe, must stop
+
 
 guidance.setWaypointManager(waypointManager);
 
@@ -55,18 +59,18 @@ rbody.write;
 accelLoop.write;
 guidance.write;
 
-% response
+%% responses
 figure;
 subplot(211);
 plotg(rbody_time,rbody_theta*180/pi);
 hold on;
-plotg(rbody_time,accelLoop_thetaCmd*180/pi,'r--');
+%plotg(rbody_time,accelLoop_thetaCmd*180/pi,'r--');
 ylabel('Theta (deg)');
 title('Body Theta');
 subplot(212);
 plotg(rbody_time,rbody_phi*180/pi);
 hold on;
-plotg(rbody_time,accelLoop_phiCmd*180/pi,'r--');
+%plotg(rbody_time,accelLoop_phiCmd*180/pi,'r--');
 ylabel('Phi (deg)');
 title('Body Phi');
 xlabel('Time (sec)');
@@ -83,21 +87,17 @@ ylabel('vy (m/s)');
 title('Velocity Y response');
 
 
-% ground track
-figure;
-plotg(rbody_y,rbody_x);
-title('Ground track');
-axis equal
-hold on;
-wpts = waypointManager.wptArray;
-plotg(wpts(:,2),wpts(:,1),'k--');
-plotg(wpts(:,2),wpts(:,1),'ro');
 
 
 % cross track error and distance to go error
 figure;
 subplot(211);
 plotg(guidance_time,guidance_distToGoError);
+hold on;
+idx = find(guidance_state==1,1,'first');
+%plotg(guidance_time(idx),guidance_distCritical(idx),'m--');
+thres = guidance_distCritical(idx);
+yline(thres);
 title('Distance to go');
 ylabel('Distance (m)');
 xlabel('Time (sec)');
@@ -108,11 +108,13 @@ title('Cross Track Error');
 xlabel('Time (sec)');
 ylabel('Cross Track Error (m)');
 
+
+
 figure;
 subplot(211)
 plotg(rbody_time,rbody_ax);
 hold on;
-plotg(guidance_time,guidance_axCmd,'r--');
+%plotg(guidance_time,guidance_axCmd,'r--');
 title('Accel X response');
 ylabel('Accel X (m/s^2)');
 subplot(212);
@@ -120,6 +122,18 @@ plotg(rbody_time,rbody_ay);
 title('Accel Y response');
 ylabel('Accel Y (m/s^2)');
 
+link;
+
+
+% ground track
+figure;
+plotg(rbody_y,rbody_x);
+title('Ground track');
+axis equal
+hold on;
+wpts = waypointManager.wptArray;
+plotg(wpts(:,2),wpts(:,1),'k--');
+plotg(wpts(:,2),wpts(:,1),'ro');
 
 fanfigs;
 

@@ -8,8 +8,8 @@ classdef AccelGuidanceLoop < handle & IWriter
       
       name = 'guidance';
       nextPath = [0 0 0]';
-      nextWpt = [0 0 0]';
-      fromWpt = [0 0 0]';
+      nextWpt;
+      fromWpt = Waypoint(0,0,0);
       waypointManager;
 
       userAxCmd = 1; % not really VxCmd, but thetaCmd
@@ -28,6 +28,8 @@ classdef AccelGuidanceLoop < handle & IWriter
       isBraking = false;
       
       distToGoController;
+      
+      state = 0;
       
       x = 0;
       y = 0;
@@ -54,6 +56,7 @@ classdef AccelGuidanceLoop < handle & IWriter
          'distToGoError'
          'distToGoErrorRate'
          'distCritical'
+         'state'
       };
                   
    end
@@ -79,7 +82,7 @@ classdef AccelGuidanceLoop < handle & IWriter
          self.crossTrackController.controlMax = 5;
          self.crossTrackController.controlMin = -5;
          
-         self.distToGoController.controlMax = 1;
+         self.distToGoController.controlMax = 3;
          self.distToGoController.controlMin = -5;
          
          self.writer = Writer(self.name, self.outputVars, ...
@@ -89,7 +92,8 @@ classdef AccelGuidanceLoop < handle & IWriter
                   self.crossTrackError ...
                   self.distToGoError ...
                   self.distToGoErrorRate ...
-                  self.distCritical]');
+                  self.distCritical ...
+                  self.state]');
       end
       
       % put this in a protocol
@@ -112,63 +116,68 @@ classdef AccelGuidanceLoop < handle & IWriter
          self.vx = getappdata(0,'data_rbody_vx');
          self.vy = getappdata(0,'data_rbody_vy');
          
-         posDiff = [self.x, self.y, 0]' - self.fromWpt;
+         % cross track
+         posDiff = [self.x, self.y, 0]' - self.fromWpt.position;
          crossTrackErrorVector = cross(self.nextPath,posDiff);
          self.crossTrackError = crossTrackErrorVector(3);
          
-         if isempty(self.nextWpt)
-            self.ayCmd = 0;
-            self.crossTrackError = 0;
-         else          
-            if ( self.x < self.nextWpt(1))
-               self.crossTrackController.error = - self.crossTrackError;
-               self.crossTrackController.step;
-               self.ayCmd = self.crossTrackController.getCommand;
-            else
-%                self.nextWpt = self.waypointManager.next;
-%                
-%                if isempty(self.nextWpt)
-%                   self.ayCmd = 0;
-%                   self.crossTrackError = 0;
-%                else
-%                   self.updateNextPath(self.nextWpt);
-%                end
-                 self.ayCmd = 0;
-                 self.crossTrackError = 0;
-            end
-         end
-         
-         % activate the x loop for testing a braking command
-         % guide along the path
-         
-       
+         % distance to go
          distAlongPath = dot(self.nextPath,posDiff);
          pathLength = norm(self.nextWpt-self.fromWpt);
          self.distToGoError = pathLength - distAlongPath;
 
          vel = [self.vx self.vy 0];
          velocityAlongPath = dot(self.nextPath,vel);
-
          vCmd = 0;
-         
          amax = 2;
          self.distCritical = 2*velocityAlongPath^2/(2*amax);
          
-         if abs(self.distToGoError) < self.distCritical
-            self.isBraking = true;
+         if (self.nextWpt.safe == false) &&  (abs(self.distToGoError) < self.distCritical)
+            self.isBraking = true; % this can do back to false for safe user command
          end
          
+         if isempty(self.nextWpt)
+            self.ayCmd = 0;
+            self.crossTrackError = 0;
+         else
+            if ( self.distToGoError > 0 )
+               self.crossTrackController.error = - self.crossTrackError;
+               self.crossTrackController.step;
+               self.ayCmd = self.crossTrackController.getCommand;
+            else
+               
+               % only go to next waypoint if the current one is safe
+               if self.nextWpt.safe == true
+                  
+                  self.nextWpt = self.waypointManager.next;
+                  
+                  if isempty(self.nextWpt)
+                     self.ayCmd = 0;
+                     self.crossTrackError = 0;
+                  else
+                     self.updateNextPath(self.nextWpt);
+                  end
+               end
+               
+               self.ayCmd = 0;
+               self.crossTrackError = 0;
+            end
+         end
+                
+
+         
          if (self.isBraking)
-                        
+            self.state = 1;
             self.distToGoErrorRate = vCmd - velocityAlongPath;
-            
             self.distToGoController.error = self.distToGoError;
             self.distToGoController.deriv_error = self.distToGoErrorRate;
             
             self.distToGoController.step;
             self.axCmd = self.distToGoController.getCommand;
          else
+            
             self.axCmd = self.userAxCmd;
+            
          end
          
          self.time = self.time + self.dt;
@@ -178,14 +187,15 @@ classdef AccelGuidanceLoop < handle & IWriter
          
       function updateNextPath(self,nextWpt)
          currentPos = [self.x, self.y, 0]';
-         self.fromWpt = currentPos; %or can use the prev wpt in the list
-         temp = nextWpt - currentPos;
+         self.fromWpt.setPosition(currentPos); %or can use the prev wpt in the list
+         temp = nextWpt.position - currentPos;
          self.nextPath = temp / norm(temp);         
-      end   
+      end
          
       % override default implementation of the protocol (interface) class
       function write(self)
          self.crossTrackController.write;
+         self.distToGoController.write;
          self.writer.write;
       end
       
