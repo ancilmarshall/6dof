@@ -19,6 +19,7 @@ classdef ControllerPID < handle & IWriter
       
       controlMax = Inf;
       controlMin = -Inf;
+      isIntegrationAllowed = true;
       
    end
    
@@ -59,7 +60,9 @@ classdef ControllerPID < handle & IWriter
                   
          % PID
          self.controlProp = self.kp * self.error;
-         self.controlInt = self.controlInt + self.ki * self.error * self.dt;
+         if (self.isIntegrationAllowed)
+            self.controlInt = self.controlInt + self.ki * self.error * self.dt;
+         end
          self.controlDeriv = self.kd * (self.error-self.prev_error)/self.dt;
          
          self.control = self.controlProp + self.controlDeriv + ... 
@@ -67,8 +70,18 @@ classdef ControllerPID < handle & IWriter
          self.time = self.time + self.dt;
          
          %saturate output
-         self.control = min(self.control,self.controlMax);
-         self.control = max(self.control,self.controlMin);
+%          self.control = min(self.control,self.controlMax);
+%          self.control = max(self.control,self.controlMin);
+         
+         if self.control > self.controlMax
+            self.control = self.controlMax;
+            self.isIntegrationAllowed = false;
+         elseif self.control < self.controlMin
+            self.control = self.controlMin;
+            self.isIntegrationAllowed = false;
+         else
+            self.isIntegrationAllowed = true;
+         end
                   
          self.prev_error = self.error;
          self.writer.step;

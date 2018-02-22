@@ -36,10 +36,14 @@ classdef AccelLoop < handle & IWriter
       errorAy = 0;
       
       % gains without feed forward gain
-      kp = 0.025;
-      ki = 0.3;
-      kd = 0;
+%       kp = 0.025;
+%       ki = 0.2;
+%       kd = 0;
      
+      kp = 0.012;
+      ki = 0.05;
+      kd = 0;
+      
       % gains with feed forward gain
 %       kp = 0;
 %       ki = 0;
@@ -108,6 +112,8 @@ classdef AccelLoop < handle & IWriter
          self.ax = getappdata(0,'data_rbody_ax');
          self.ay = getappdata(0,'data_rbody_ay');
          
+         userThetaCmd = getappdata(0,'data_guidance_userThetaCmd');
+         
          % guidance object is an AccelGuidanceLoop object for this consumer
          self.axRef = self.guidance.axCmd;
          self.ayRef = self.guidance.ayCmd;
@@ -139,11 +145,17 @@ classdef AccelLoop < handle & IWriter
          self.accelXController.controlFF = thetaFF;
          self.accelYController.controlFF = phiFF;
    
-         self.accelXController.step;
-         self.accelYController.step;
+         guidance_state = getappdata(0,'logic_guidance_state');
          
-         self.thetaCmd  = self.accelXController.getCommand;
-         self.phiCmd = self.accelYController.getCommand;
+         if (guidance_state == 1)
+            self.accelXController.step;
+            self.thetaCmd  = self.accelXController.getCommand;
+         else
+            self.thetaCmd = userThetaCmd;
+         end
+         
+         self.accelYController.step;
+         self.phiCmd = self.accelYController.getCommand;         
          
          self.time = self.time + self.dt;
          % output

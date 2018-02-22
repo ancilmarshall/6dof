@@ -4,9 +4,11 @@ close all;
 
 global Cx Cy G wn zeta thetaCmd phiCmd
 
+rtd = 180/pi;
+
 % config
 t0 = 0;
-tf = 30;
+tf = 50;
 dt = 0.005;
 
 Cx = 0.35;  % s-1
@@ -28,6 +30,9 @@ setappdata(0,'config_aero_Cx',Cx);
 setappdata(0,'config_aero_Cy',Cy);
 setappdata(0,'config_env_G',G);
 
+setappdata(0,'data_guidance_userThetaCmd',-2*pi/180);
+setappdata(0,'logic_guidance_state',0);
+
 % objects
 rbody = RBody5D(states,dt);
 accelLoop = AccelLoop(dt);
@@ -39,13 +44,14 @@ accelLoop.guidance = guidance;
 
 % need to set this to properly init the guidance loop
 waypointManager = WaypointManager;
-waypointManager.add(Waypoint(10,5,0)); %false = not safe, must stop
-waypointManager.add(Waypoint(20,0,0)); %false = not safe, must stop
-waypointManager.add(Waypoint(30,0,0)); %false = not safe, must stop
-waypointManager.add(Waypoint(40,10,0,false)); %false = not safe, must stop
-
+waypointManager.add(Waypoint(40,0,0,false)); %false = not safe, must stop
+% waypointManager.add(Waypoint(10,5,0)); %false = not safe, must stop
+% waypointManager.add(Waypoint(20,0,0)); %false = not safe, must stop
+% waypointManager.add(Waypoint(30,0,0)); %false = not safe, must stop
+% waypointManager.add(Waypoint(40,10,0,false)); %false = not safe, must stop
 
 guidance.setWaypointManager(waypointManager);
+
 
 % sim
 while rbody.time < tf
@@ -59,7 +65,7 @@ rbody.write;
 accelLoop.write;
 guidance.write;
 
-%% responses
+% responses
 figure;
 subplot(211);
 plotg(rbody_time,rbody_theta*180/pi);
@@ -96,8 +102,8 @@ plotg(guidance_time,guidance_distToGoError);
 hold on;
 idx = find(guidance_state==1,1,'first');
 %plotg(guidance_time(idx),guidance_distCritical(idx),'m--');
-thres = guidance_distCritical(idx);
-yline(thres);
+% thres = guidance_distCritical(idx);
+% yline(thres);
 title('Distance to go');
 ylabel('Distance (m)');
 xlabel('Time (sec)');
@@ -122,7 +128,61 @@ plotg(rbody_time,rbody_ay);
 title('Accel Y response');
 ylabel('Accel Y (m/s^2)');
 
-link;
+
+figure;
+plotg(guidance_time,guidance_state);
+title('Accel Loop Guidance State. 0-Flying, 1-Braking');
+ylabel('State (-)');
+xlabel('Time (sec)');
+ylim([0 1.2]);
+
+
+if ~isempty(idx)
+   
+   ii = find(guidance_state == 1);
+   time = rbody_time(ii) - rbody_time(ii(1));
+   ax = rbody_ax(ii);
+   dist = guidance_distToGoError(ii);
+   vx = rbody_vx(ii);
+   theta = rbody_theta(ii)*180/pi;
+   
+   
+   figure;
+   subplot(221)
+   plotg(time,ax);
+   ylabel('Accel (m/s^2)');
+   title('Performance during braking to fixed waypoint');
+   
+   subplot(222);
+   plotg(time,vx);
+   ylabel('Velocity (m/s)');
+   
+   subplot(223);
+   plotg(time,dist);
+   ylabel('Dist To Go (m)');
+  
+   subplot(224);
+   plotg(time,theta);
+   ylabel('Theta (deg)');
+   xlabel('Time during braking (sec)');
+   
+end
+
+
+% accel loop controller
+figure
+plotg(axLoopPID_time,axLoopPID_control*rtd);
+hold on;
+plotg(axLoopPID_time,axLoopPID_controlProp*rtd,'r');
+plotg(axLoopPID_time,axLoopPID_controlInt*rtd,'g');
+plotg(axLoopPID_time,axLoopPID_controlDeriv*rtd,'c');
+plotg(axLoopPID_time,axLoopPID_controlFF*rtd,'k--');
+legend('total','prop','int','deriv','ff');
+xlabel('Time (sec)');
+ylabel('Theta command (deg)');
+title('Accleration Loop Control Performance');
+
+%link;
 
 
 % ground track

@@ -15,6 +15,8 @@ classdef AccelGuidanceLoop < handle & IWriter
       userAxCmd = 1; % not really VxCmd, but thetaCmd
       userAyCmd = 0;
       
+      accelDuration = 7;
+      
       axCmd = 0;
       ayCmd = 0;
       
@@ -26,6 +28,7 @@ classdef AccelGuidanceLoop < handle & IWriter
       distCritical = 0;
       
       isBraking = false;
+      brakingStartTime = 0.0;
       
       distToGoController;
       
@@ -77,7 +80,7 @@ classdef AccelGuidanceLoop < handle & IWriter
          
          self.distToGoController.kp = 1;
          self.distToGoController.ki = 0;
-         self.distToGoController.kd = 1.5;
+         self.distToGoController.kd = 2;
          
          self.crossTrackController.controlMax = 5;
          self.crossTrackController.controlMin = -5;
@@ -106,7 +109,7 @@ classdef AccelGuidanceLoop < handle & IWriter
       
       function step(self)
          
-         if self.time > 2
+         if self.time > self.accelDuration
             self.userAxCmd = 0;
          end
          
@@ -129,11 +132,15 @@ classdef AccelGuidanceLoop < handle & IWriter
          vel = [self.vx self.vy 0];
          velocityAlongPath = dot(self.nextPath,vel);
          vCmd = 0;
-         amax = 2;
-         self.distCritical = 2*velocityAlongPath^2/(2*amax);
+         amax = 4;
+         self.distCritical = velocityAlongPath^2/(2*amax);
+         
+         self.distCritical = self.distCritical+2; % add a buffer
+         %self.distCritical = max(self.distCritical,2);
          
          if (self.nextWpt.safe == false) &&  (abs(self.distToGoError) < self.distCritical)
             self.isBraking = true; % this can do back to false for safe user command
+            self.brakingStartTime = self.time;
          end
          
          if isempty(self.nextWpt)
@@ -172,16 +179,31 @@ classdef AccelGuidanceLoop < handle & IWriter
             self.distToGoController.error = self.distToGoError;
             self.distToGoController.deriv_error = self.distToGoErrorRate;
             
+            % do not allow positive acceleration commands during first few
+            % seconds of braking. Dont want vehicle speeding up
+%             if self.time < (self.brakingStartTime + 2)
+%                self.distToGoController.controlMax = 0;
+%             else
+%                self.distToGoController.controlMax = 3;
+%             end
+            
             self.distToGoController.step;
             self.axCmd = self.distToGoController.getCommand;
+
+%             if self.time < (self.brakingStartTime + 2)
+%                self.axCmd = min(self.axCmd,0);
+%             end
+            
+            
          else
-            
             self.axCmd = self.userAxCmd;
-            
          end
          
          self.time = self.time + self.dt;
          self.writer.step;
+         
+         % output
+         setappdata(0,'logic_guidance_state',self.state);
       end
          
          
