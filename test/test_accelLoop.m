@@ -37,8 +37,10 @@ guidance = AccelGuidanceLoop(dt);
 rbody.angleCommandProducer = accelLoop;
 accelLoop.guidance = guidance;
 
+accelLoop.dcgain = 0.89371;
+
 % set the guidance command
-guidance.axCmd = 1;
+guidance.axCmd = 2;
 guidance.ayCmd = 0;
 
 % sim

@@ -1,4 +1,4 @@
-classdef AccelGuidanceLoop < handle & IWriter
+classdef AccelGuidanceLoopFastBraking < handle & IWriter
    
    
    properties
@@ -67,7 +67,7 @@ classdef AccelGuidanceLoop < handle & IWriter
    
    methods
       
-      function self = AccelGuidanceLoop(dt)
+      function self = AccelGuidanceLoopFastBraking(dt)
          self.dt = dt;
          self.time = 0;
 
@@ -133,7 +133,10 @@ classdef AccelGuidanceLoop < handle & IWriter
          velocityAlongPath = dot(self.nextPath,vel);
          vCmd = 0;
          amax = 4;
-         self.distCritical = velocityAlongPath^2/(2*amax);
+         
+         ax = getappdata(0,'data_rbody_ax');
+         self.distCritical = self.calcCriticalDistance(ax,-4,velocityAlongPath,0.15);
+                 
          
          self.distCritical = self.distCritical+1; % add a buffer
          
@@ -185,7 +188,10 @@ classdef AccelGuidanceLoop < handle & IWriter
 %             end
             
             self.distToGoController.step;
-            self.axCmd = self.distToGoController.getCommand;
+            self.axCmd = -4;%self.distToGoController.getCommand;
+            if (velocityAlongPath < 0.8)
+               self.axCmd = 0;
+            end
 
 %             if self.time < (self.brakingStartTime + 2)
 %                self.axCmd = min(self.axCmd,0);
@@ -217,6 +223,28 @@ classdef AccelGuidanceLoop < handle & IWriter
          self.distToGoController.write;
          self.writer.write;
       end
+      
+      
+      function dist = calcCriticalDistance(~,a1,a0,v1,tau)
+         
+         % Step 1. Find v0
+         v0 = -tau*a0;
+
+         % Step 2. Solve for t0, the minimum time to do the constant braking
+         % Implement Newton Method (below)
+
+         veleq = @(t) (v0 - (-tau*(a1-a0)*exp(-t/tau) + a0*t + v1 + tau*(a1-a0)))^2;
+         texact = fminsearch(veleq,1.5);
+
+         % Step 3. Calculate total distance travelled during and after braking
+         disteq = @(t) tau*tau*(a1-a0)*exp(-t/tau) + 0.5*a0*t.^2 + v1*t + tau*(a1-a0)*t - tau^2*(a1-a0);
+         x0 = disteq(texact);
+         xf = x0 - tau*tau*a0;
+
+         dist = xf;
+         
+      end
+      
       
    end
       

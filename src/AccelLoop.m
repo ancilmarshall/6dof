@@ -36,19 +36,13 @@ classdef AccelLoop < handle & IWriter
       errorAy = 0;
       
       % gains without feed forward gain
-%       kp = 0.025;
-%       ki = 0.2;
-%       kd = 0;
-     
-      kp = 0.012;
-      ki = 0.05;
+      kp = 0.025;
+      ki = 0.3;
       kd = 0;
       
-      % gains with feed forward gain
-%       kp = 0;
-%       ki = 0;
-%       kd = 0;
-               
+      kff = 0.3; % feed-forward scale factor
+      dcgain = 0.89371;
+                    
       Cx;
       Cy;
       G;
@@ -66,10 +60,10 @@ classdef AccelLoop < handle & IWriter
          self.accelXController = ControllerPID('axLoopPID',dt);
          self.accelYController = ControllerPID('ayLoopPID',dt);
          
-         self.accelXController.controlMax =  20*pi/180;
-         self.accelXController.controlMin = -20*pi/180;
-         self.accelYController.controlMax =  20*pi/180;
-         self.accelYController.controlMin = -20*pi/180;
+         self.accelXController.controlMax =  30*pi/180;
+         self.accelXController.controlMin = -30*pi/180;
+         self.accelYController.controlMax =  30*pi/180;
+         self.accelYController.controlMin = -30*pi/180;
         
          self.accelXController.kp = self.kp;
          self.accelXController.ki = self.ki;
@@ -115,10 +109,8 @@ classdef AccelLoop < handle & IWriter
          userThetaCmd = getappdata(0,'data_guidance_userThetaCmd');
          
          % guidance object is an AccelGuidanceLoop object for this consumer
-         self.axRef = self.guidance.axCmd;
+         self.axRef = 1/self.dcgain * self.guidance.axCmd;
          self.ayRef = self.guidance.ayCmd;
-%          self.axRef = 1;
-%          self.ayRef = 0;
          
          % step composants
 
@@ -142,8 +134,8 @@ classdef AccelLoop < handle & IWriter
 %          thetaFF = -beta*F(1)/Fnorm;
 %          phiFF = beta*F(2)/Fnorm;
          
-         self.accelXController.controlFF = thetaFF;
-         self.accelYController.controlFF = phiFF;
+         self.accelXController.controlFF = 0.3*thetaFF;
+         self.accelYController.controlFF = 0.3*phiFF;
    
          guidance_state = getappdata(0,'logic_guidance_state');
          
