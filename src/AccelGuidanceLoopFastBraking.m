@@ -19,6 +19,11 @@ classdef AccelGuidanceLoopFastBraking < handle & IWriter
       
       axCmd = 0;
       ayCmd = 0;
+      axRef = 0;
+      ayRef = 0;
+      
+      vxCmd = 0.0;
+      vyCmd = 0.0;
       
       crossTrackError = 0;
       crossTrackController;
@@ -29,7 +34,9 @@ classdef AccelGuidanceLoopFastBraking < handle & IWriter
       
       isBraking = false;
       brakingStartTime = 0.0;
-      
+      tau = 0.15;
+      %v0 = 0.0;
+      brakingDecelerationTime = 0.0;
       distToGoController;
       
       state = 0;
@@ -78,9 +85,13 @@ classdef AccelGuidanceLoopFastBraking < handle & IWriter
          self.crossTrackController.ki = self.ki;
          self.crossTrackController.kd = self.kd;
          
+%          self.distToGoController.kp = 3;
+%          self.distToGoController.ki = 0;
+%          self.distToGoController.kd = 2;
+          
          self.distToGoController.kp = 3;
          self.distToGoController.ki = 0;
-         self.distToGoController.kd = 2;
+         self.distToGoController.kd = 1;
          
          self.crossTrackController.controlMax = 5;
          self.crossTrackController.controlMin = -5;
@@ -135,12 +146,13 @@ classdef AccelGuidanceLoopFastBraking < handle & IWriter
          amax = 4;
          
          ax = getappdata(0,'data_rbody_ax');
-         self.distCritical = self.calcCriticalDistance(ax,-4,velocityAlongPath,0.15);
-                 
-         
-         self.distCritical = self.distCritical+1; % add a buffer
-         
-         if (self.nextWpt.safe == false) &&  (abs(self.distToGoError) < self.distCritical)
+         if (self.isBraking == false)
+            self.distCritical = self.calcCriticalDistance(ax,-4,velocityAlongPath);
+         end
+                          
+         if (self.nextWpt.safe == false) &&  ...
+            (abs(self.distToGoError) < self.distCritical) && ...
+            (self.state ~= 2)
             self.isBraking = true; % this can do back to false for safe user command
             self.brakingStartTime = self.time;
          end
@@ -179,23 +191,25 @@ classdef AccelGuidanceLoopFastBraking < handle & IWriter
             self.distToGoController.error = self.distToGoError;
             self.distToGoController.deriv_error = self.distToGoErrorRate;
             
-            % do not allow positive acceleration commands during first few
-            % seconds of braking. Dont want vehicle speeding up
-%             if self.time < (self.brakingStartTime + 2)
-%                self.distToGoController.controlMax = 0;
-%             else
-%                self.distToGoController.controlMax = 3;
-%             end
-            
-            self.distToGoController.step;
-            self.axCmd = -4;%self.distToGoController.getCommand;
-            if (velocityAlongPath < 0.8)
-               self.axCmd = 0;
+            if (velocityAlongPath >= 0.6 )
+                % open position loop, closed accel loop
+                self.distToGoController.step;
+                self.axCmd = self.distToGoController.getCommand;
+                self.axRef = -4;
+                self.axCmd = 0;
+            else
+               % activate the outer position loop, keep accel loop closed               
+               %self.distToGoController.step;
+               self.axCmd = 0; % self.distToGoController.getCommand;
+               self.axRef = 0; % zero the open loop accel cmd            
             end
-
-%             if self.time < (self.brakingStartTime + 2)
-%                self.axCmd = min(self.axCmd,0);
-%             end
+            
+            totalBrakingTime = self.tau + self.brakingDecelerationTime;
+            if ((self.time - self.brakingStartTime) > totalBrakingTime)
+               self.state = 2;
+               self.isBraking = 0;
+            end
+            
             
             
          else
@@ -225,21 +239,21 @@ classdef AccelGuidanceLoopFastBraking < handle & IWriter
       end
       
       
-      function dist = calcCriticalDistance(~,a1,a0,v1,tau)
+      function dist = calcCriticalDistance(self,a1,a0,v1)
          
          % Step 1. Find v0
-         v0 = -tau*a0;
+         v0 = - self.tau*a0;
 
          % Step 2. Solve for t0, the minimum time to do the constant braking
          % Implement Newton Method (below)
 
-         veleq = @(t) (v0 - (-tau*(a1-a0)*exp(-t/tau) + a0*t + v1 + tau*(a1-a0)))^2;
-         texact = fminsearch(veleq,1.5);
+         veleq = @(t) (v0 - (-self.tau*(a1-a0)*exp(-t/self.tau) + a0*t + v1 + self.tau*(a1-a0)))^2;
+         self.brakingDecelerationTime = fminsearch(veleq,1.5);
 
          % Step 3. Calculate total distance travelled during and after braking
-         disteq = @(t) tau*tau*(a1-a0)*exp(-t/tau) + 0.5*a0*t.^2 + v1*t + tau*(a1-a0)*t - tau^2*(a1-a0);
-         x0 = disteq(texact);
-         xf = x0 - tau*tau*a0;
+         disteq = @(t) self.tau*self.tau*(a1-a0)*exp(-t/self.tau) + 0.5*a0*t.^2 + v1*t + self.tau*(a1-a0)*t - self.tau^2*(a1-a0);
+         x0 = disteq(self.brakingDecelerationTime);
+         xf = x0 - self.tau*self.tau*a0;
 
          dist = xf;
          

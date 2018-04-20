@@ -36,6 +36,7 @@ setappdata(0,'logic_guidance_state',0);
 % objects
 rbody = RBody5D(states,dt);
 accelLoop = AccelLoop(dt);
+velocityLoop = VelocityLoop(dt);
 guidance = AccelGuidanceLoopFastBraking(dt);
 %guidance = AccelGuidanceLoop(dt);
 
@@ -55,10 +56,26 @@ guidance.setWaypointManager(waypointManager);
 
 
 % sim
+
+isVelocityLoopState = 0;
+
 while rbody.time < tf
+   
+   if (guidance.state == 2 && isVelocityLoopState == 0 )
+      isVelocityLoopState = 1;
+      velocityLoop.guidance = guidance;
+      rbody.angleCommandProducer = velocityLoop;
+   end
+   
    rbody.step;
-   accelLoop.step;
+   
+   if isVelocityLoopState
+      velocityLoop.step;
+   else
+      accelLoop.step;
+   end
    guidance.step;
+   
 end
 
 % write

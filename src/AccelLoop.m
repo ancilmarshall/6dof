@@ -12,6 +12,8 @@ classdef AccelLoop < handle & IWriter
       outputVars = {
          'axRef'
          'axRef'
+         'axCmd'
+         'ayCmd'
          'vx'
          'vy'
          'ax'
@@ -24,6 +26,8 @@ classdef AccelLoop < handle & IWriter
       
       axRef = 0;
       ayRef = 0;
+      axCmd = 0;
+      ayCmd = 0;
       vx = 0;
       vy = 0;
       ax = 0;
@@ -41,7 +45,7 @@ classdef AccelLoop < handle & IWriter
       kd = 0;
       
       kff = 0.3; % feed-forward scale factor
-      dcgain = 0.89371;
+      dcgain = 0.89371; % dcgain (depends on Ki)
                     
       Cx;
       Cy;
@@ -84,6 +88,8 @@ classdef AccelLoop < handle & IWriter
             @() [ self.time ...
                   self.axRef ...
                   self.ayRef ...
+                  self.axCmd ...
+                  self.ayCmd ...
                   self.vx ...
                   self.vy ...                  
                   self.ax ...
@@ -109,20 +115,23 @@ classdef AccelLoop < handle & IWriter
          userThetaCmd = getappdata(0,'data_guidance_userThetaCmd');
          
          % guidance object is an AccelGuidanceLoop object for this consumer
-         self.axRef = 1/self.dcgain * self.guidance.axCmd;
-         self.ayRef = self.guidance.ayCmd;
+         self.axCmd = self.guidance.axCmd;
+         self.ayCmd = self.guidance.ayCmd;
+         self.axRef = self.guidance.axRef;
+         self.ayRef = self.guidance.ayRef;
          
          % step composants
-
-         self.errorAx = self.axRef - self.ax;
-         self.errorAy = self.ayRef - self.ay;
+         totalAxCmd = self.axRef + self.axCmd;
+         totalAyCmd = self.ayRef + self.ayCmd;
+         self.errorAx = 1/self.dcgain*totalAxCmd - self.ax;
+         self.errorAy = 1/self.dcgain*totalAyCmd - self.ay;
    
          self.accelXController.error = - self.errorAx; % gain negative for pitch axis
          self.accelYController.error = self.errorAy; 
          
          % feedfoward calculation
-         thetaFF = - atan2(self.axRef + self.Cx*self.vx, self.G);
-         phiFF = atan2(self.ayRef + self.Cy*self.vy, self.G);
+         thetaFF = - atan2(totalAxCmd + self.Cx*self.vx, self.G);
+         phiFF = atan2(totalAyCmd + self.Cy*self.vy, self.G);
           
          % feedfward from colibry (to compare). Works out to same
 %          accel = [self.axRef self.ayRef]';
@@ -134,8 +143,8 @@ classdef AccelLoop < handle & IWriter
 %          thetaFF = -beta*F(1)/Fnorm;
 %          phiFF = beta*F(2)/Fnorm;
          
-         self.accelXController.controlFF = 0.3*thetaFF;
-         self.accelYController.controlFF = 0.3*phiFF;
+         self.accelXController.controlFF = self.kff*thetaFF;
+         self.accelYController.controlFF = self.kff*phiFF;
    
          guidance_state = getappdata(0,'logic_guidance_state');
          
