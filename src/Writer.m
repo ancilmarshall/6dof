@@ -32,7 +32,8 @@ classdef Writer < handle
         
         function updateData(self,data)
             data = data'; % transpose to form row vector
-            if isempty(data)
+
+            if isempty(self.data)
                 self.data = data;
             else
                 self.data(end+1,:) = data;

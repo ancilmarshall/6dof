@@ -48,7 +48,7 @@ classdef RBody5D < handle & IWriter
             self.writer = Writer(self.name,self.outputVars, ...
                @() [self.time;self.states;self.ax;self.ay]);
             
-            % get config data
+            % get config data ( look like our config manager/data manager
             self.wn = getappdata(0,'config_act_wn');
             self.zeta = getappdata(0,'config_act_zeta');
             self.Cx = getappdata(0,'config_aero_Cx');
@@ -77,6 +77,7 @@ classdef RBody5D < handle & IWriter
             theta_cmd = self.angleCommandProducer.thetaCmd;
             phi_cmd = self.angleCommandProducer.phiCmd;
             
+            % typically what we program in ode45
             % X-dir nonlinear equations
             xdot(1,1) = vx;
             xdot(2,1) = -self.Cx*vx - self.G*tan(theta);
@@ -105,7 +106,7 @@ classdef RBody5D < handle & IWriter
             phi = self.states(7);
             self.ay = -self.Cy*vy + self.G*tan(phi);
             
-            %update the writer
+            % update the writer
             self.writer.step;
             
 %             for i=1:length(self.consumers)
@@ -113,7 +114,7 @@ classdef RBody5D < handle & IWriter
 %                 consumer.updateStates(self.states)
 %             end
             
-            %%% output
+            % output
             self.setOutputData;
             
         end

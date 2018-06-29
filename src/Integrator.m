@@ -34,7 +34,7 @@ classdef Integrator < handle
             %check that derivatives are set
             
             % simple euler integration
-            % improve to RK-4 integration
+            % TODO: improve to RK-4 integration
             self.states = self.states + self.derivatives * self.dt;
             for i=1:length(self.consumers)
                 self.consumers(i).updateStates(self.states)

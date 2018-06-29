@@ -8,7 +8,7 @@ rtd = 180/pi;
 
 % config
 t0 = 0;
-tf = 15;
+tf = 10;
 dt = 0.005;
 
 Cx = 0.35;  % s-1
@@ -17,7 +17,7 @@ wn = 11;     %rad/s
 zeta = 0.9; % -
 Cy = Cx;
 
-thetaCmd = -20*pi/180;
+thetaCmd = -30*pi/180;
 phiCmd = 0*pi/180;
 states = [0 0 0 0 0 0 0 0]';
 
@@ -30,17 +30,16 @@ setappdata(0,'config_aero_Cx',Cx);
 setappdata(0,'config_aero_Cy',Cy);
 setappdata(0,'config_env_G',G);
 
-setappdata(0,'data_guidance_userThetaCmd',-10*pi/180);
-setappdata(0,'logic_guidance_state',0);
+setappdata(0,'data_guidance_userThetaCmd',-20*pi/180);
+setappdata(0,'logic_guidance_state',1); % activate guidance loop
 
 % objects
 rbody = RBody5D(states,dt);
 accelLoop = AccelLoop(dt);
-guidance = AccelGuidanceLoopFastBraking(dt);
-%guidance = AccelGuidanceLoop(dt);
+guidance = AccelGuidanceLoopTrajRef(dt);
 
 % producer registration
-rbody.angleCommandProducer = accelLoop;
+rbody.angleCommandProducer = accelLoop; % velocityLoop
 accelLoop.guidance = guidance;
 
 % need to set this to properly init the guidance loop
@@ -52,7 +51,6 @@ waypointManager.add(Waypoint(30,0,0,false)); %false = not safe, must stop
 % waypointManager.add(Waypoint(40,10,0,false)); %false = not safe, must stop
 
 guidance.setWaypointManager(waypointManager);
-
 
 % sim
 while rbody.time < tf

@@ -24,9 +24,9 @@ classdef AccelLoop < handle & IWriter
          'errorAy'
          };
       
-      axRef = 0;
+      axRef = 0; % open loop guidance reference
       ayRef = 0;
-      axCmd = 0;
+      axCmd = 0; % from outer position loop compensation
       ayCmd = 0;
       vx = 0;
       vy = 0;
@@ -39,13 +39,16 @@ classdef AccelLoop < handle & IWriter
       errorAx = 0;
       errorAy = 0;
       
-      % gains without feed forward gain
-      kp = 0.025;
-      ki = 0.3;
-      kd = 0;
+      % gains 
+%       kp = 0.025;
+%       ki = 0.3;
+%       kd = 0;
       
-      kff = 0.3; % feed-forward scale factor
-      dcgain = 0.89371; % dcgain (depends on Ki)
+      % zero gains so that I only have ff control in the accel loop
+      kp = 0;
+      ki = 0;
+      kd = 0;      
+      
                     
       Cx;
       Cy;
@@ -64,10 +67,10 @@ classdef AccelLoop < handle & IWriter
          self.accelXController = ControllerPID('axLoopPID',dt);
          self.accelYController = ControllerPID('ayLoopPID',dt);
          
-         self.accelXController.controlMax =  30*pi/180;
-         self.accelXController.controlMin = -30*pi/180;
-         self.accelYController.controlMax =  30*pi/180;
-         self.accelYController.controlMin = -30*pi/180;
+         self.accelXController.controlMax =  40*pi/180;
+         self.accelXController.controlMin = -40*pi/180;
+         self.accelYController.controlMax =  40*pi/180;
+         self.accelYController.controlMin = -40*pi/180;
         
          self.accelXController.kp = self.kp;
          self.accelXController.ki = self.ki;
@@ -123,8 +126,8 @@ classdef AccelLoop < handle & IWriter
          % step composants
          totalAxCmd = self.axRef + self.axCmd;
          totalAyCmd = self.ayRef + self.ayCmd;
-         self.errorAx = 1/self.dcgain*totalAxCmd - self.ax;
-         self.errorAy = 1/self.dcgain*totalAyCmd - self.ay;
+         self.errorAx = totalAxCmd - self.ax;
+         self.errorAy = totalAyCmd - self.ay;
    
          self.accelXController.error = - self.errorAx; % gain negative for pitch axis
          self.accelYController.error = self.errorAy; 
@@ -132,21 +135,13 @@ classdef AccelLoop < handle & IWriter
          % feedfoward calculation
          thetaFF = - atan2(totalAxCmd + self.Cx*self.vx, self.G);
          phiFF = atan2(totalAyCmd + self.Cy*self.vy, self.G);
-          
-         % feedfward from colibry (to compare). Works out to same
-%          accel = [self.axRef self.ayRef]';
-%          C = [self.Cx self.Cy]';
-%          v = [self.vx self.vy]';
-%          F = accel + C.*v;
-%          Fnorm = norm(F);
-%          beta = atan2(Fnorm,self.G);
-%          thetaFF = -beta*F(1)/Fnorm;
-%          phiFF = beta*F(2)/Fnorm;
+
          
-         self.accelXController.controlFF = self.kff*thetaFF;
-         self.accelYController.controlFF = self.kff*phiFF;
+         self.accelXController.controlFF = thetaFF;
+         self.accelYController.controlFF = phiFF;
    
          guidance_state = getappdata(0,'logic_guidance_state');
+         % 0 - user pilot command, 1 - use position/accel loop
          
          if (guidance_state == 1)
             self.accelXController.step;
