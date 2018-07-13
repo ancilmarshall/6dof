@@ -141,7 +141,7 @@ classdef AccelLoop < handle & IWriter
          self.accelYController.controlFF = phiFF;
    
          guidance_state = getappdata(0,'logic_guidance_state');
-         % 0 - user pilot command, 1 - use position/accel loop
+         % 0 - user pilot command, 1 - use outer position/accel loop
          
          if (guidance_state == 1)
             self.accelXController.step;

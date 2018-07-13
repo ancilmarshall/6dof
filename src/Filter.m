@@ -3,8 +3,8 @@ classdef Filter < handle & IWriter
    % n order digital filter implementation
    
    properties
-      a
-      b
+      a  % denominator
+      b  % numerator
       
       dt
       time
@@ -52,6 +52,10 @@ classdef Filter < handle & IWriter
                   self.input(self.order+1); ...
                   self.output(self.order+1)]);
                   
+      end
+      
+      function out = batch(self)
+         
       end
             
       function out = step(self)

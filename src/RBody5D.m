@@ -20,6 +20,7 @@ classdef RBody5D < handle & IWriter
         Cy
         G;
         
+        %output
         ax = 0;
         ay = 0;
         
@@ -40,20 +41,21 @@ classdef RBody5D < handle & IWriter
     methods
         
         function self = RBody5D(states,dt)
-            self.time = 0;
-            self.states = states;
-            self.dt = dt;
-            
-            self.integrator = Integrator(self.states,self.dt);
-            self.writer = Writer(self.name,self.outputVars, ...
-               @() [self.time;self.states;self.ax;self.ay]);
-            
             % get config data ( look like our config manager/data manager
             self.wn = getappdata(0,'config_act_wn');
             self.zeta = getappdata(0,'config_act_zeta');
             self.Cx = getappdata(0,'config_aero_Cx');
             self.Cy = getappdata(0,'config_aero_Cy');
-            self.G = getappdata(0,'config_env_G');
+            self.G = getappdata(0,'config_env_G');           
+                      
+            self.time = 0;
+            self.states = states;
+            self.dt = dt;
+            self.updateOutput;
+            
+            self.integrator = Integrator(self.states,self.dt);
+            self.writer = Writer(self.name,self.outputVars, ...
+               @() [self.time;self.states;self.ax;self.ay]);
             
         end
         
@@ -97,14 +99,7 @@ classdef RBody5D < handle & IWriter
             [self.time,self.states] = self.integrator.step;
             
             %update calculated variables
-            
-            vx = self.states(2);
-            theta = self.states(3);
-            self.ax = -self.Cx*vx - self.G*tan(theta);
-            
-            vy = self.states(6);
-            phi = self.states(7);
-            self.ay = -self.Cy*vy + self.G*tan(phi);
+            self.updateOutput;
             
             % update the writer
             self.writer.step;
@@ -117,6 +112,18 @@ classdef RBody5D < handle & IWriter
             % output
             self.setOutputData;
             
+        end
+        
+        function updateOutput(self)
+           
+            vx = self.states(2);
+            theta = self.states(3);
+            self.ax = -self.Cx*vx - self.G*tan(theta);
+            
+            vy = self.states(6);
+            phi = self.states(7);
+            self.ay = -self.Cy*vy + self.G*tan(phi);           
+           
         end
         
         function setOutputData(self)

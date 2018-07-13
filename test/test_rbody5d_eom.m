@@ -1,7 +1,14 @@
 function xdot = test_rbody5d_eom(~,state)
 
-global Cx Cy G wn zeta thetaCmd phiCmd
+wn = getappdata(0,'config_act_wn');
+zeta = getappdata(0,'config_act_zeta');
+Cx = getappdata(0,'config_aero_Cx');
+Cy = getappdata(0,'config_aero_Cy');
+G = getappdata(0,'config_env_G');
+thetaCmd = getappdata(0,'data_guidance_userThetaCmd');
+phiCmd = getappdata(0,'data_guidance_userPhiCmd');
 
+            
 vx = state(2);
 theta = state(3);
 q = state(4);
