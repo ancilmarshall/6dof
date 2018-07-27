@@ -50,7 +50,7 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
       vx = 0;
       vy = 0;
       
-      config = AvoidanceConfigClass(); % TODO: put in the git repo
+      config = AvoidanceConfigClass.instance();
 
       
       % config (guess)

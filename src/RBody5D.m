@@ -9,6 +9,10 @@ classdef RBody5D < handle & IWriter
         
         %producer
         angleCommandProducer;
+        windProducer;
+        
+        vwx = 0;
+        vwy = 0;
     end
     
     properties (Access = private )
@@ -82,14 +86,14 @@ classdef RBody5D < handle & IWriter
             % typically what we program in ode45
             % X-dir nonlinear equations
             xdot(1,1) = vx;
-            xdot(2,1) = -self.Cx*vx - self.G*tan(theta);
+            xdot(2,1) = -self.Cx*(vx-self.vwx) - self.G*tan(theta);
             xdot(3,1) = q;
             xdot(4,1) = -self.wn^2*theta - ...
                2*self.zeta*self.wn*q + self.wn^2*theta_cmd;
 
             % Y-dir nonlinear equations
             xdot(5,1) = vy;
-            xdot(6,1) = - self.Cy*vy + self.G*tan(phi);
+            xdot(6,1) = - self.Cy*(vy-self.vwy) + self.G*tan(phi);
             xdot(7,1) = p;
             xdot(8,1) = -self.wn^2*phi - ...
                2*self.zeta*self.wn*p + self.wn^2*phi_cmd;
@@ -118,11 +122,11 @@ classdef RBody5D < handle & IWriter
            
             vx = self.states(2);
             theta = self.states(3);
-            self.ax = -self.Cx*vx - self.G*tan(theta);
+            self.ax = -self.Cx*(vx-self.vwx) - self.G*tan(theta);
             
             vy = self.states(6);
             phi = self.states(7);
-            self.ay = -self.Cy*vy + self.G*tan(phi);           
+            self.ay = -self.Cy*(vy-self.vwy) + self.G*tan(phi);           
            
         end
         
@@ -137,13 +141,14 @@ classdef RBody5D < handle & IWriter
             phi = self.states(7);
             p = self.states(8);
 
-           
             setappdata(0,'data_rbody_x',x);
             setappdata(0,'data_rbody_y',y);
             setappdata(0,'data_rbody_vx',vx);
             setappdata(0,'data_rbody_vy',vy);
             setappdata(0,'data_rbody_ax',self.ax);
             setappdata(0,'data_rbody_ay',self.ay);
+            setappdata(0,'data_rbody_q',q);
+            setappdata(0,'data_rbody_p',p);
             setappdata(0,'data_rbody_theta',theta);
             setappdata(0,'data_rbody_phi',phi);           
         end

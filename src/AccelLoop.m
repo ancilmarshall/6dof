@@ -57,6 +57,8 @@ classdef AccelLoop < handle & IWriter
       % producer
       guidance;
       
+      phase = 0;
+      
    end
    
    
@@ -67,10 +69,10 @@ classdef AccelLoop < handle & IWriter
          self.accelXController = ControllerPID('axLoopPID',dt);
          self.accelYController = ControllerPID('ayLoopPID',dt);
          
-         self.accelXController.controlMax =  40*pi/180;
-         self.accelXController.controlMin = -40*pi/180;
-         self.accelYController.controlMax =  40*pi/180;
-         self.accelYController.controlMin = -40*pi/180;
+         self.accelXController.controlMax =  55*pi/180;
+         self.accelXController.controlMin = -55*pi/180;
+         self.accelYController.controlMax =  55*pi/180;
+         self.accelYController.controlMin = -55*pi/180;
         
          self.accelXController.kp = self.kp;
          self.accelXController.ki = self.ki;
@@ -84,7 +86,8 @@ classdef AccelLoop < handle & IWriter
          self.Cy = getappdata(0,'config_aero_Cy');
          self.G = getappdata(0,'config_env_G');
                   
-         self.dt = 0;
+         self.dt = 0; % TODO: Why? 
+         
          self.time = 0;
          
          self.writer = Writer(self.name, self.outputVars, ...
@@ -149,6 +152,12 @@ classdef AccelLoop < handle & IWriter
          else
             self.thetaCmd = userThetaCmd;
          end
+         
+         transitionVx = abs(0.15*self.ax); % 1 m/s - Do a calculation here
+         if (self.vx < transitionVx) || self.phase ==1
+            self.phase = 1;
+            self.thetaCmd = 0;
+         end         
          
          self.accelYController.step;
          self.phiCmd = self.accelYController.getCommand;         

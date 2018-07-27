@@ -1,13 +1,15 @@
-% Test acceleration loop with closed loop controller
+% Simulate response when given an angle input command which is zero'd
+% in order that vehicle comes to a stop. 
 clear all;
 close all;
 
 % config
 t0 = 0;
-tf = 3;
+tf = 6;
 dt = 0.005;
-i_compare_exact = 0; 
+i_compare_exact = 0;
 
+% Bebop
 % Cx = 0.35;  % s-1
 % G = 9.81;   % m/s^2
 % wn = 11;    %rad/s
@@ -21,12 +23,9 @@ wn = 11;    %rad/s
 zeta = 0.9; % -
 Cy = Cx;
 
-
-userThetaCmd = 35*pi/180;
-userPhiCmd = 0*pi/180;
-
+% initial conditions
 % x, vx, theta, q, y, vy, phi, p
-v0 = 20;
+v0 = 30.0;
 theta0 = -30*pi/180;
 states = [0 v0 theta0 0 0 0 0 0]';
 
@@ -35,50 +34,49 @@ setappdata(0,'config_act_zeta',zeta);
 setappdata(0,'config_aero_Cx',Cx);
 setappdata(0,'config_aero_Cy',Cy);
 setappdata(0,'config_env_G',G);
-setappdata(0,'data_guidance_userThetaCmd',userThetaCmd);
-setappdata(0,'data_guidance_userPhiCmd',userPhiCmd);
-setappdata(0,'logic_guidance_state',1); % 0 - open loop theta command, 1 - close accel loop
+
 % exact simulation
-[tout,yout] = ode45('test_rbody5d_eom',[t0 tf],states);
+%[tout,yout] = ode45('test_rbody5d_eom',[t0 tf],states);
 
 % objects
 rbody = RBody5D(states,dt);
-accelLoop = AccelLoop(dt);
-guidance = AccelGuidanceLoop(dt);
+angleInput = AngleInput(dt);
 
 % producer registration
-rbody.angleCommandProducer = accelLoop;
-accelLoop.guidance = guidance;
+rbody.angleCommandProducer = angleInput;
 
-% set the guidance command
-guidance.axCmd = -12;
-guidance.ayCmd = 0;
+% set cmds
+angleInput.thetaCmd = 30*pi/180;
+
+% add Wind
+rbody.vwx = 0;
+rbody.vwy = 0;
+angleInput.vwx = 0;
+angleInput.vwy = 0;
 
 % sim
-while rbody.time < tf
+while (rbody.time < tf) && ( rbody.states(2) > -0.025 ) 
    rbody.step;
-   accelLoop.step;
-   %guidance.step;
+   angleInput.step;
 end
 
 % write
 rbody.write;
-accelLoop.write;
-%guidance.write;
+angleInput.write;
 
 % % response
 figure;
 subplot(211);
 plotg(rbody_time,rbody_theta*180/pi);
 hold on;
-plotg(rbody_time,accelLoop_thetaCmd*180/pi,'r--');
+plotg(rbody_time,angleInput_thetaCmd*180/pi,'r--');
 if (i_compare_exact); plotg(tout,yout(:,3)*180/pi,'m--'); end;
 ylabel('Theta (deg)');
 title('Body Theta');
 subplot(212);
 plotg(rbody_time,rbody_phi*180/pi);
 hold on;
-plotg(rbody_time,accelLoop_phiCmd*180/pi,'r--');
+plotg(rbody_time,angleInput_phiCmd*180/pi,'r--');
 if (i_compare_exact); plotg(tout,yout(:,7),'m--'); end;
 ylabel('Phi (deg)');
 title('Body Phi');
