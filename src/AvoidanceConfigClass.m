@@ -10,17 +10,17 @@ classdef AvoidanceConfigClass < Singleton
       v1max = 4.0;
       
       %bepop
-%       Cx = 0.35;
-%       G = 9.81;
-%       wn  = 11;
-%       zeta = 0.9;
+      Cx = 0.35;
+      G = 9.81;
+      wn  = 11;
+      zeta = 0.9;
       
       
       %anafi
-      Cx = 0.47;
-      G = 9.81;
-      wn  = 11;
-      zeta = 0.9;      
+%       Cx = 0.47;
+%       G = 9.81;
+%       wn  = 11;
+%       zeta = 0.9;      
       
       
       Cy;

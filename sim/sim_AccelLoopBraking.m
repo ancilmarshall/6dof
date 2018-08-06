@@ -1,5 +1,5 @@
 % Perform cross track guidance with a Velocity Loop
-clear all;
+%clear all;
 close all;
 
 global Cx Cy G wn zeta thetaCmd phiCmd
@@ -8,7 +8,7 @@ rtd = 180/pi;
 
 % config
 t0 = 0;
-tf = 10;
+tf = 7;
 dt = 0.005;
 
 Cx = 0.35;  % s-1
@@ -19,7 +19,8 @@ Cy = Cx;
 
 thetaCmd = -30*pi/180;
 phiCmd = 0*pi/180;
-states = [0 0 0 0 0 0 0 0]';
+% x v theta q y w phi r]
+states = [0 1 0 0 0 0 0 0]';
 
 % exact simulation
 %[tout,yout] = ode45('test_rbody5d_eom',[t0 tf],states);
@@ -30,7 +31,7 @@ setappdata(0,'config_aero_Cx',Cx);
 setappdata(0,'config_aero_Cy',Cy);
 setappdata(0,'config_env_G',G);
 
-setappdata(0,'data_guidance_userThetaCmd',-20*pi/180);
+setappdata(0,'data_guidance_userThetaCmd',thetaCmd);
 setappdata(0,'logic_guidance_state',1); % activate guidance loop
 
 % objects
@@ -44,7 +45,7 @@ accelLoop.guidance = guidance;
 
 % need to set this to properly init the guidance loop
 waypointManager = WaypointManager;
-waypointManager.add(Waypoint(30,0,0,false)); %false = not safe, must stop
+waypointManager.add(Waypoint(20,0,0,false)); %false = not safe, must stop
 % waypointManager.add(Waypoint(10,5,0)); %false = not safe, must stop
 % waypointManager.add(Waypoint(20,0,0)); %false = not safe, must stop
 % waypointManager.add(Waypoint(30,0,0)); %false = not safe, must stop
@@ -55,8 +56,8 @@ guidance.setWaypointManager(waypointManager);
 % sim
 while rbody.time < tf
    rbody.step;
-   accelLoop.step;
    guidance.step;
+   accelLoop.step;
 end
 
 % write
@@ -90,8 +91,6 @@ subplot(212);
 plotg(rbody_time,rbody_vy);
 ylabel('vy (m/s)');
 title('Velocity Y response');
-
-
 
 
 % cross track error and distance to go error
@@ -130,15 +129,23 @@ ylabel('Accel Y (m/s^2)');
 
 figure;
 plotg(guidance_time,guidance_state);
-title('Accel Loop Guidance State. 0-Flying, 1-Braking');
+title('Accel Loop Guidance State. 0-Flying, 1-Braking, 2-Levelout');
 ylabel('State (-)');
 xlabel('Time (sec)');
 ylim([0 1.2]);
 
+figure;
+plotg(guidance_time,guidance_xRef,'r--');
+hold on;
+plotg(rbody_time,rbody_x,'b');
+title('X ref');
+ylabel('Distance (m)');
+xlabel('Time (s)');
+
 
 if ~isempty(idx)
    
-   ii = find(guidance_state == 1);
+   ii = find(guidance_state >= 1);
    time = rbody_time(ii) - rbody_time(ii(1));
    ax = rbody_ax(ii);
    dist = guidance_distToGoError(ii);
@@ -191,9 +198,9 @@ title('Ground track');
 axis equal
 hold on;
 wpts = waypointManager.wptArray;
-plotg(wpts(:,2),wpts(:,1),'k--');
+%plotg(wpts(:,2),wpts(:,1),'k--');
 plotg(wpts(:,2),wpts(:,1),'ro');
 
-fanfigs;
+%fanfigs;
 
 

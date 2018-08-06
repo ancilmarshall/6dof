@@ -11,7 +11,7 @@ classdef AccelLoop < handle & IWriter
       name = 'accelLoop';
       outputVars = {
          'axRef'
-         'axRef'
+         'ayRef'
          'axCmd'
          'ayCmd'
          'vx'
@@ -86,7 +86,7 @@ classdef AccelLoop < handle & IWriter
          self.Cy = getappdata(0,'config_aero_Cy');
          self.G = getappdata(0,'config_env_G');
                   
-         self.dt = 0; % TODO: Why? 
+         self.dt = dt;
          
          self.time = 0;
          
@@ -138,7 +138,6 @@ classdef AccelLoop < handle & IWriter
          % feedfoward calculation
          thetaFF = - atan2(totalAxCmd + self.Cx*self.vx, self.G);
          phiFF = atan2(totalAyCmd + self.Cy*self.vy, self.G);
-
          
          self.accelXController.controlFF = thetaFF;
          self.accelYController.controlFF = phiFF;
@@ -146,18 +145,13 @@ classdef AccelLoop < handle & IWriter
          guidance_state = getappdata(0,'logic_guidance_state');
          % 0 - user pilot command, 1 - use outer position/accel loop
          
-         if (guidance_state == 1)
+         if (guidance_state >= 1)
             self.accelXController.step;
             self.thetaCmd  = self.accelXController.getCommand;
          else
             self.thetaCmd = userThetaCmd;
          end
-         
-         transitionVx = abs(0.15*self.ax); % 1 m/s - Do a calculation here
-         if (self.vx < transitionVx) || self.phase ==1
-            self.phase = 1;
-            self.thetaCmd = 0;
-         end         
+      
          
          self.accelYController.step;
          self.phiCmd = self.accelYController.getCommand;         

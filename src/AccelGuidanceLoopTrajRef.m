@@ -74,6 +74,9 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
          'distToGoErrorRate'
          'distCritical'
          'state'
+         'xRef'
+         'vxRef'
+         'axRef'
       };
         
    end
@@ -106,9 +109,9 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
          self.crossTrackController.ki = self.ki;
          self.crossTrackController.kd = self.kd;
          
-         self.distToGoController.kp = 3;
-         self.distToGoController.ki = 0;
-         self.distToGoController.kd = 2;
+         self.distToGoController.kp = 2;
+         self.distToGoController.ki = 1;
+         self.distToGoController.kd = 1;
          
          self.crossTrackController.controlMax = 5;
          self.crossTrackController.controlMin = -5;
@@ -124,7 +127,10 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
                   self.distToGoError ...
                   self.distToGoErrorRate ...
                   self.distCritical ...
-                  self.state]');
+                  self.state ...
+                  self.xRef ...
+                  self.vxRef ...
+                  self.axRef]');
       end
       
       % put this in a protocol
@@ -158,8 +164,6 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
          tau = self.config.tau;
          vel = [self.vx self.vy 0];
          velocityAlongPath = dot(self.nextPath,vel);
-         vCmd = 0;
-         amax = 4;
          
          ax = getappdata(0,'data_rbody_ax');
          if (self.isBraking == false)
@@ -170,7 +174,6 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
             (abs(self.distToGoError) < self.distCritical) && ...
             (self.state ~= 2)
             self.isBraking = true; % this can go back to false for safe user command
-            self.brakingStartTime = self.time;
          end
          
          if isempty(self.nextWpt)
@@ -208,7 +211,7 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
             a1 = self.brakingPhaseStartAccel;
             v1 = self.brakingPhaseStartVel;
             a0 = self.avoidanceBrakingAcceleration;
-            xf = self.avoidanceBrakingThresholdDistance;
+            xf = self.avoidanceBrakingThresholdDistance;               
             
             accel = 0.0;
             vel = 0.0;
@@ -217,14 +220,14 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
             currentBrakingTime = self.time - self.brakingStartTime;
             
             if (currentBrakingTime < self.avoidanceBrakingTime )
-               
+
                t = currentBrakingTime;
                accel = self.avoidanceBrakingAcceleration;
                vel = -tau*(a1-a0)*exp(-t/tau) + a0*t + v1 + tau*(a1-a0);
                dist = tau*tau*(a1-a0)*exp(-t/tau) + 0.5*a0*t*t + v1*t + tau*(a1-a0)*t - tau*tau*(a1-a0);
                
-            else 
-               
+            else  % levelout
+                self.state = 2;
                 t = currentBrakingTime - self.avoidanceBrakingTime;
                 accel = 0.0;
                 vel = - tau*a0*exp(-t/tau);
@@ -234,11 +237,11 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
             
             self.axRef = accel;
             self.vxRef = vel;
-            self.xRef = dist + self.brakingStartPosition;
+            self.xRef = dist + self.brakingStartPosition + 2;
             
-            self.distToGoError = self.xRef - self.distAlongPath;
+            dgoError = self.xRef - self.distAlongPath;
             self.distToGoErrorRate = self.vxRef - velocityAlongPath;
-            self.distToGoController.error = self.distToGoError;
+            self.distToGoController.error = dgoError;
             self.distToGoController.deriv_error = self.distToGoErrorRate;
             
             % close position loop and velocity loop
@@ -252,7 +255,6 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
          
          self.time = self.time + self.dt;
          self.writer.step;
-         
          % output
          setappdata(0,'logic_guidance_state',self.state);
       end
@@ -317,6 +319,7 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
          self.brakingStartPosition = self.distAlongPath;
          self.brakingPhaseStartAccel = self.ax;
          self.brakingPhaseStartVel = self.vx;
+         self.brakingStartTime = self.time;
       end
       
       

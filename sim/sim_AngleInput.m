@@ -66,55 +66,55 @@ angleInput.write;
 
 % % response
 figure;
-subplot(211);
+%subplot(211);
 plotg(rbody_time,rbody_theta*180/pi);
 hold on;
 plotg(rbody_time,angleInput_thetaCmd*180/pi,'r--');
 if (i_compare_exact); plotg(tout,yout(:,3)*180/pi,'m--'); end;
 ylabel('Theta (deg)');
 title('Body Theta');
-subplot(212);
-plotg(rbody_time,rbody_phi*180/pi);
-hold on;
-plotg(rbody_time,angleInput_phiCmd*180/pi,'r--');
-if (i_compare_exact); plotg(tout,yout(:,7),'m--'); end;
-ylabel('Phi (deg)');
-title('Body Phi');
-xlabel('Time (sec)');
+% subplot(212);
+% plotg(rbody_time,rbody_phi*180/pi);
+% hold on;
+% plotg(rbody_time,angleInput_phiCmd*180/pi,'r--');
+% if (i_compare_exact); plotg(tout,yout(:,7),'m--'); end;
+% ylabel('Phi (deg)');
+% title('Body Phi');
+% xlabel('Time (sec)');
 
 
 figure;
-subplot(211);
+% subplot(211);
 plotg(rbody_time,rbody_vx);
 hold on;
 if (i_compare_exact); plotg(tout,yout(:,2),'m--'); end;
 title('Velocity X response');
-subplot(212);
-plotg(rbody_time,rbody_vy);
-hold on;
-if (i_compare_exact); plotg(tout,yout(:,6),'m--'); end;
-ylabel('vy (m/s)');
-title('Velocity Y response');
+% subplot(212);
+% plotg(rbody_time,rbody_vy);
+% hold on;
+% if (i_compare_exact); plotg(tout,yout(:,6),'m--'); end;
+% ylabel('vy (m/s)');
+% title('Velocity Y response');
 
 figure;
-subplot(211)
+% subplot(211)
 plotg(rbody_time,rbody_ax);
 title('Accel X response');
 ylabel('Accel X (m/s^2)');
-subplot(212);
-plotg(rbody_time,rbody_ay);
-title('Accel Y response');
-ylabel('Accel Y (m/s^2)');
+% subplot(212);
+% plotg(rbody_time,rbody_ay);
+% title('Accel Y response');
+% ylabel('Accel Y (m/s^2)');
 
 figure;
-subplot(211)
+% subplot(211)
 plotg(rbody_time,rbody_x);
 title('Distance X response');
 ylabel('Distance X (m)');
-subplot(212);
-plotg(rbody_time,rbody_y);
-title('Distance Y response');
-ylabel('Distance Y (m/s^2)');
+% subplot(212);
+% plotg(rbody_time,rbody_y);
+% title('Distance Y response');
+% ylabel('Distance Y (m/s^2)');
 
 
 
