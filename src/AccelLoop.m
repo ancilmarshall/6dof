@@ -145,7 +145,7 @@ classdef AccelLoop < handle & IWriter
          guidance_state = getappdata(0,'logic_guidance_state');
          % 0 - user pilot command, 1 - use outer position/accel loop
          
-         if (guidance_state >= 1)
+         if (guidance_state >= 1) % TODO: get rid of this 
             self.accelXController.step;
             self.thetaCmd  = self.accelXController.getCommand;
          else

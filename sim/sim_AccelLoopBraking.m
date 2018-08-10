@@ -188,18 +188,18 @@ xlabel('Time (sec)');
 ylabel('Theta command (deg)');
 title('Accleration Loop Control Performance');
 
-%link;
+link;
 
 
 % ground track
-figure;
-plotg(rbody_y,rbody_x);
-title('Ground track');
-axis equal
-hold on;
-wpts = waypointManager.wptArray;
-%plotg(wpts(:,2),wpts(:,1),'k--');
-plotg(wpts(:,2),wpts(:,1),'ro');
+% figure;
+% plotg(rbody_y,rbody_x);
+% title('Ground track');
+% axis equal
+% hold on;
+% wpts = waypointManager.wptArray;
+% %plotg(wpts(:,2),wpts(:,1),'k--');
+% plotg(wpts(:,2),wpts(:,1),'ro');
 
 %fanfigs;
 

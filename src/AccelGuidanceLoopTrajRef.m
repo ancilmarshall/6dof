@@ -237,7 +237,7 @@ classdef AccelGuidanceLoopTrajRef < handle & IWriter
             
             self.axRef = accel;
             self.vxRef = vel;
-            self.xRef = dist + self.brakingStartPosition + 2;
+            self.xRef = dist + self.brakingStartPosition;
             
             dgoError = self.xRef - self.distAlongPath;
             self.distToGoErrorRate = self.vxRef - velocityAlongPath;

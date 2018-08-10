@@ -1,4 +1,4 @@
-classdef AngleInput < handle & IWriter
+classdef AngleInputRateLimits < handle & IWriter
 
    properties
       
@@ -24,6 +24,11 @@ classdef AngleInput < handle & IWriter
       Cx = 0.47;
       G = 9.81;
       
+      rateLimitNominal = 50*pi/180; 
+      rateLimitCorrection = 50*pi/180;
+      thetaCorrection =  20*pi/180;
+      vxTransition = 4.5;
+      
    end
    
    properties(Access = private)
@@ -33,7 +38,7 @@ classdef AngleInput < handle & IWriter
    
    methods
       
-      function self = AngleInput(dt)
+      function self = AngleInputRateLimits(dt)
          self.dt = dt;
          self.time = 0;
          
@@ -56,17 +61,25 @@ classdef AngleInput < handle & IWriter
          % angle profile goes here
          
          % -ve for -ve wind
-         thetaCmdEq = atan2(self.Cx*self.vwx,self.G);
-         transitionVx = abs(self.tau*self.ax); %approximation. tau is also an estimate
-         if self.vx < transitionVx
-            self.thetaCmd = thetaCmdEq;
+         nextCmd = self.thetaCmd;
+         if self.vx < self.vxTransition
+            nextCmd = 0;
          end
                   
-         % only for postive wind, need this cap
-         if self.thetaCmd < thetaCmdEq;
-            self.thetaCmd = thetaCmdEq;
+         % limit the rate
+        
+         if (self.thetaCmd < self.thetaCorrection)
+            ratelimit = self.rateLimitCorrection;
+         else
+            ratelimit = self.rateLimitNominal;
          end
-                  
+         
+         if ( abs(nextCmd - self.thetaCmd) > ratelimit*self.dt)
+            self.thetaCmd = self.thetaCmd - ratelimit*self.dt;
+         else
+            self.thetaCmd = nextCmd;
+         end
+         
          self.phiCmd = 0 * self.d2r;
          
          self.time = self.time + self.dt;

@@ -1,13 +1,16 @@
-% Simulate response when given an angle input command which is zero'd
-% in order that vehicle comes to a stop. 
+% Simulate response for a constant tilt command during braking maneuver
+% Transitions to the correct angle to maintain a fixed position at the
+% end of the maneuver taking into account wind. 
+
 clear all;
 close all;
 
 % config
 t0 = 0;
-tf = 6;
+tf = 4;
 dt = 0.005;
 i_compare_exact = 0;
+i_print = 0;
 
 % Bebop
 % Cx = 0.35;  % s-1
@@ -25,8 +28,14 @@ Cy = Cx;
 
 % initial conditions
 % x, vx, theta, q, y, vy, phi, p
-v0 = 30.0;
-theta0 = -30*pi/180;
+
+vwx = 0;
+vwy = 0;
+
+vair = 15;
+
+v0 = vair+vwx;
+theta0 = -40*pi/180;
 states = [0 v0 theta0 0 0 0 0 0]';
 
 setappdata(0,'config_act_wn',wn);
@@ -40,31 +49,44 @@ setappdata(0,'config_env_G',G);
 
 % objects
 rbody = RBody5D(states,dt);
-angleInput = AngleInput(dt);
+angleInput = AngleInputRateLimits(dt);
 
 % producer registration
 rbody.angleCommandProducer = angleInput;
 
 % set cmds
-angleInput.thetaCmd = 30*pi/180;
+thetaCmd0 = 40*pi/180;
+angleInput.thetaCmd = thetaCmd0;
 
 % add Wind
-rbody.vwx = 0;
-rbody.vwy = 0;
-angleInput.vwx = 0;
-angleInput.vwy = 0;
+
+setappdata(0,'env_wind_vwx',vwx);
+setappdata(0,'env_wind_vwy',vwy);
+
+% paramters
+angleInput.rateLimitCorrection = 25 *pi/180;
+
+% optimization
+angleInput.vxTransition = 6.1;
 
 % sim
-while (rbody.time < tf) && ( rbody.states(2) > -0.025 ) 
+while (rbody.time < tf) 
    rbody.step;
    angleInput.step;
 end
+
 
 % write
 rbody.write;
 angleInput.write;
 
-% % response
+% test peak accel after 1
+ii = rbody_time > 1;
+ax = rbody_ax(ii);
+axMax = max(ax)
+
+
+% % responses
 figure;
 %subplot(211);
 plotg(rbody_time,rbody_theta*180/pi);
@@ -82,7 +104,6 @@ title('Body Theta');
 % title('Body Phi');
 % xlabel('Time (sec)');
 
-
 figure;
 % subplot(211);
 plotg(rbody_time,rbody_vx);
@@ -99,6 +120,7 @@ title('Velocity X response');
 figure;
 % subplot(211)
 plotg(rbody_time,rbody_ax);
+hold on;
 title('Accel X response');
 ylabel('Accel X (m/s^2)');
 % subplot(212);
@@ -116,5 +138,55 @@ ylabel('Distance X (m)');
 % title('Distance Y response');
 % ylabel('Distance Y (m/s^2)');
 
+% figure;
+% subplot(211)
+% plotg(rbody_time,rbody_q);
+% title('Pitch Rate response');
+% ylabel('Pitch Rate (rad/s)');
+% subplot(212);
+% plotg(rbody_time,rbody_p);
+% title('Roll Rate response');
+% ylabel('Roll Rate (rad/s)');
+% xlabel('Time (sec)');
 
 
+figure;
+subplot(311)
+plotg(rbody_time,rbody_theta*180/pi);
+hold on;
+plotg(rbody_time,angleInput_thetaCmd*180/pi,'r--');
+ylabel('Theta (deg)');
+title({'{\bf \fontsize{14} Braking At Constant Theta With Wind}';...
+       ['C_x = ', num2str(Cx) ' s^{-1}, Initial Vgnd = ' ...
+            num2str(v0) ' m/s, theta Cmd = ' sprintf('%3.1f',thetaCmd0*180/pi) ' deg, ' ...
+            'Wind ' num2str(vwx) ' m/s']});
+ylim([-45 50]);
+xlim([0 tf]);
+         
+subplot(312)
+plotg(rbody_time,rbody_vx);
+title('Ground Speed');
+ylabel('Ground Speed (m/s)');
+xlim([0 tf]);
+ylim([0 30]);
+
+
+subplot(313)
+plotg(rbody_time,rbody_x);
+title('Distance');
+ylabel('Distance(m)');
+xlabel('Time (sec)');
+xlim([0 tf]);
+%ylim([0 60]);
+% 
+
+if i_print
+if vwx > 0
+   print(gcf,'-dpng',...
+      sprintf('stoppingDistanceTrajs45_tailwind_%d',vwx));
+else
+   print(gcf,'-dpng',...
+      sprintf('stoppingDistanceTrajs45_headwind_%d',-vwx));
+end
+end
+disp(max(rbody_x))

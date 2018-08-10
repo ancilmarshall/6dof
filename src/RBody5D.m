@@ -11,6 +11,7 @@ classdef RBody5D < handle & IWriter
         angleCommandProducer;
         windProducer;
         
+        %wind
         vwx = 0;
         vwy = 0;
     end
@@ -51,7 +52,8 @@ classdef RBody5D < handle & IWriter
             self.Cx = getappdata(0,'config_aero_Cx');
             self.Cy = getappdata(0,'config_aero_Cy');
             self.G = getappdata(0,'config_env_G');           
-                      
+
+            
             self.time = 0;
             self.states = states;
             self.dt = dt;
@@ -68,7 +70,9 @@ classdef RBody5D < handle & IWriter
         end
         
         function step(self)
-
+            self.vwx = getappdata(0,'env_wind_vwx');
+            self.vwy = getappdata(0,'env_wind_vwy');
+            
             x = self.states(1);
             vx = self.states(2);
             theta = self.states(3);
