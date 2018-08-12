@@ -151,7 +151,6 @@ classdef AccelLoop < handle & IWriter
          else
             self.thetaCmd = userThetaCmd;
          end
-      
          
          self.accelYController.step;
          self.phiCmd = self.accelYController.getCommand;         

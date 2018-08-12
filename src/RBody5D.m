@@ -154,7 +154,8 @@ classdef RBody5D < handle & IWriter
             setappdata(0,'data_rbody_q',q);
             setappdata(0,'data_rbody_p',p);
             setappdata(0,'data_rbody_theta',theta);
-            setappdata(0,'data_rbody_phi',phi);           
+            setappdata(0,'data_rbody_phi',phi); 
+            setappdata(0,'data_rbody_time',self.time);
         end
         
     end

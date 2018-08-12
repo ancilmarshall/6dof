@@ -34,6 +34,9 @@ setappdata(0,'config_env_G',G);
 setappdata(0,'data_guidance_userThetaCmd',thetaCmd);
 setappdata(0,'logic_guidance_state',1); % activate guidance loop
 
+setappdata(0,'env_wind_vwx',0);
+setappdata(0,'env_wind_vwy',0);
+
 % objects
 rbody = RBody5D(states,dt);
 accelLoop = AccelLoop(dt);
@@ -188,7 +191,7 @@ xlabel('Time (sec)');
 ylabel('Theta command (deg)');
 title('Accleration Loop Control Performance');
 
-link;
+%link;
 
 
 % ground track

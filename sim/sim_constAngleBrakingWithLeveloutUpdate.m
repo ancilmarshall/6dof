@@ -7,7 +7,7 @@ close all;
 
 % config
 t0 = 0;
-tf = 4;
+tf = 10;
 dt = 0.005;
 i_compare_exact = 0;
 i_print = 0;
@@ -44,19 +44,18 @@ setappdata(0,'config_aero_Cx',Cx);
 setappdata(0,'config_aero_Cy',Cy);
 setappdata(0,'config_env_G',G);
 
-% exact simulation
-%[tout,yout] = ode45('test_rbody5d_eom',[t0 tf],states);
 
 % objects
 rbody = RBody5D(states,dt);
 angleInput = AngleInput(dt);
+positionLoop = PositionLoop(dt);
+positionInput = PositionInput(dt);
 
 % producer registration
 rbody.angleCommandProducer = angleInput;
-
+positionLoop.positionInput = positionInput;
 % set cmds
 thetaCmd0 = 40*pi/180;
-angleInput.thetaCmd = thetaCmd0;
 
 % add Wind
 
@@ -69,9 +68,30 @@ setappdata(0,'env_wind_vwy',vwy);
 % optimization
 %angleInput.vxTransition = 6.1;
 
-% sim
+% initialize sim
+angleInput.thetaCmd = thetaCmd0;
+phase = 'flying'; %flying, braking, levelout
 while (rbody.time < tf) 
-   angleInput.step;
+   
+   %handle events here
+   if rbody.time > 1
+      phase = 'braking';
+   end
+   
+   velTransition = angleInput.getLeveloutTransitionVx+0.2;
+   if strcmp(phase,'braking') && (angleInput.vx < velTransition)
+      positionInput.xInput = 15; 
+      rbody.angleCommandProducer = positionLoop;
+      
+      positionInput.activate;
+      positionLoop.activate;
+      
+      positionInput.step;
+      positionLoop.step;
+   else
+      angleInput.step
+   end
+   
    rbody.step;
 end
 
@@ -84,8 +104,7 @@ figure;
 %subplot(211);
 plotg(rbody_time,rbody_theta*180/pi);
 hold on;
-plotg(rbody_time,angleInput_thetaCmd*180/pi,'r--');
-if (i_compare_exact); plotg(tout,yout(:,3)*180/pi,'m--'); end;
+plotg(angleInput_time,angleInput_thetaCmd*180/pi,'r--');
 ylabel('Theta (deg)');
 title('Body Theta');
 % subplot(212);
@@ -101,7 +120,6 @@ figure;
 % subplot(211);
 plotg(rbody_time,rbody_vx);
 hold on;
-if (i_compare_exact); plotg(tout,yout(:,2),'m--'); end;
 title('Velocity X response');
 % subplot(212);
 % plotg(rbody_time,rbody_vy);
@@ -147,7 +165,7 @@ figure;
 subplot(311)
 plotg(rbody_time,rbody_theta*180/pi);
 hold on;
-plotg(rbody_time,angleInput_thetaCmd*180/pi,'r--');
+plotg(angleInput_time,angleInput_thetaCmd*180/pi,'r--');
 ylabel('Theta (deg)');
 title({'{\bf \fontsize{14} Braking At Constant Theta With Wind}';...
        ['C_x = ', num2str(Cx) ' s^{-1}, Initial Vgnd = ' ...

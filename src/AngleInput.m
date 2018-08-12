@@ -54,23 +54,25 @@ classdef AngleInput < handle & IWriter
          self.vwy = getappdata(0,'env_wind_vwy');
          
          % angle profile goes here
-         
-         % -ve for -ve wind
-         thetaCmdEq = atan2(self.Cx*self.vwx,self.G);
-         transitionVx = abs(self.tau*self.ax); %approximation. tau is also an estimate
-         if self.vx < transitionVx
-            self.thetaCmd = thetaCmdEq;
-         end
-                  
-         % only for postive wind, need this cap
-         if self.thetaCmd < thetaCmdEq;
-            self.thetaCmd = thetaCmdEq;
-         end
+
+%          % only for postive wind, need this cap
+%          if self.thetaCmd < thetaCmdEq
+%             self.thetaCmd = thetaCmdEq;
+%          end
                   
          self.phiCmd = 0 * self.d2r;
          
          self.time = self.time + self.dt;
          self.writer.step;
+      end
+      
+      function val = getLeveloutTransitionVx(self)
+         val = abs(self.tau*self.ax); %approximation. tau is also an estimate
+      end
+      
+      function val = getLeveloutEquilibTheta(self)
+         % -ve for -ve wind         
+         val = atan2(self.Cx*self.vwx,self.G);
       end
       
       
