@@ -54,7 +54,7 @@ classdef PositionLoop < handle & IWriter
       accelLoop;
       
       %producer
-      positionInput;
+      positionRef;
       
       outputVars = {
          'xRef'
@@ -121,8 +121,12 @@ classdef PositionLoop < handle & IWriter
          self.ax = getappdata(0,'data_rbody_ax');
          self.ay = getappdata(0,'data_rbody_ay');
          
-         self.xRef = self.positionInput.xInput;
-         self.yRef = self.positionInput.yInput;
+         self.xRef = self.positionRef.x;
+         self.yRef = self.positionRef.y;
+         self.vxRef = self.positionRef.vx;
+         self.vyRef = self.positionRef.vy;
+         self.axRef = self.positionRef.ax;
+         self.ayRef = self.positionRef.ay;
 
          % calculate position loop controller inputs
          % Note. This is PD control with use of the

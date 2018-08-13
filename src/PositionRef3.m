@@ -1,4 +1,4 @@
-classdef PositionRef < handle & IWriter
+classdef PositionRef3 < handle & IWriter
    
    properties
       
@@ -12,24 +12,29 @@ classdef PositionRef < handle & IWriter
          'vy'
          'ax'
          'ay'
+         'jx'
+         'jy'
          };
       
       % state/output along with initial conditions
       x = 0;
       vx = 0;
       ax = 0;
+      jx = 0;
       
       y = 0;
       vy = 0;
       ay = 0;
+      jy = 0;
       
-      wn = 1.5;
+      wn = 0.5;
       zeta = 0.8;
       
       ulim = .05;
       
       Kp;
       Kd;
+      Ka;
       
       %producers
       positionInput;
@@ -41,13 +46,14 @@ classdef PositionRef < handle & IWriter
    methods
       
       % constructor
-      function self = PositionRef(dt)
+      function self = PositionRef3(dt)
         
          self.dt = dt;
          self.time = 0;
          
          self.Kd = 2*self.zeta*self.wn;
          self.Kp = (self.wn)^2/self.Kd;
+         self.Ka = 10;
          
 %          self.writer = Writer(self.name,self.outputVars, ...
 %             @() [ self.time ...
@@ -69,29 +75,27 @@ classdef PositionRef < handle & IWriter
          
          %calculate the control/acceleration
          w = self.Kp*(xin-self.x);
-         axUnlimited = self.Kd*(w-self.vx);
-         axUnlimited = saturate(axUnlimited,-10,10);
+         v = self.Kp*(w-self.vx);
+         self.jx = self.Ka*(v-self.ax);
          
          w = self.Kp*(yin-self.y);
-         self.ay = self.Kd*(w-self.vy);
+         v = self.Kd*(w-self.vy);
+         self.jy = self.Ka*(v-self.ay);
          
          %integrate and update
          xdot = self.vx;
          vxdot = self.ax;
+         axdot = self.jx; % the control input
          self.x = xdot * self.dt + self.x;
          self.vx = vxdot * self.dt + self.vx;
-         
-         axLimit = 100;
-         dax = axUnlimited - self.ax;
-         dax = saturate(dax,-axLimit,axLimit);
-         
-         self.ax = dax + self.ax;
-         
+         self.ax = axdot * self.dt + self.ax;
          
          ydot = self.vy;
          vydot = self.ay;
+         aydot = self.jy; % the control input
          self.y = ydot * self.dt + self.y;
          self.vy = vydot * self.dt + self.vy;
+         self.ay = aydot * self.dt + self.ay;
          
          self.time = self.time + self.dt;
          
@@ -113,7 +117,9 @@ classdef PositionRef < handle & IWriter
                   self.vx ...
                   self.vy ...
                   self.ax ...
-                  self.ay
+                  self.ay ...
+                  self.jx ...
+                  self.jy
             ]');            
             
             

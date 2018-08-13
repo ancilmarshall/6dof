@@ -7,7 +7,7 @@ close all;
 
 % config
 t0 = 0;
-tf = 10;
+tf = 15;
 dt = 0.005;
 i_compare_exact = 0;
 i_print = 0;
@@ -44,18 +44,21 @@ setappdata(0,'config_aero_Cx',Cx);
 setappdata(0,'config_aero_Cy',Cy);
 setappdata(0,'config_env_G',G);
 
-
 % objects
 rbody = RBody5D(states,dt);
 angleInput = AngleInput(dt);
 positionLoop = PositionLoop(dt);
 positionInput = PositionInput(dt);
+positionRef = PositionRef3FullState(dt);
 
 % producer registration
 rbody.angleCommandProducer = angleInput;
-positionLoop.positionInput = positionInput;
+positionRef.positionInput = positionInput;
+positionLoop.positionRef = positionRef;
+
+
 % set cmds
-thetaCmd0 = 40*pi/180;
+thetaCmd0 = 20*pi/180;
 
 % add Wind
 
@@ -78,15 +81,17 @@ while (rbody.time < tf)
       phase = 'braking';
    end
    
-   velTransition = angleInput.getLeveloutTransitionVx+0.2;
-   if strcmp(phase,'braking') && (angleInput.vx < velTransition)
-      positionInput.xInput = 15; 
+   velTransition = angleInput.getLeveloutTransitionVx;
+   if strcmp(phase,'braking') && (angleInput.vx < 2)
+      positionInput.xInput = 20; 
       rbody.angleCommandProducer = positionLoop;
       
       positionInput.activate;
+      positionRef.activate;
       positionLoop.activate;
       
       positionInput.step;
+      positionRef.step;
       positionLoop.step;
    else
       angleInput.step
@@ -98,6 +103,9 @@ end
 % write
 rbody.write;
 angleInput.write;
+positionInput.write;
+positionRef.write;
+positionLoop.write;
 
 % % responses
 figure;
@@ -131,6 +139,8 @@ title('Velocity X response');
 figure;
 % subplot(211)
 plotg(rbody_time,rbody_ax);
+hold on;
+plotg(positionRef_time,positionRef_ax,'r--');
 hold on;
 title('Accel X response');
 ylabel('Accel X (m/s^2)');
@@ -179,7 +189,7 @@ plotg(rbody_time,rbody_vx);
 title('Ground Speed');
 ylabel('Ground Speed (m/s)');
 xlim([0 tf]);
-ylim([0 30]);
+ylim([-5 20]);
 
 
 subplot(313)
