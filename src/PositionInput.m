@@ -46,6 +46,7 @@ classdef PositionInput < handle & IWriter
       % event handling protocol
       function activate(self)
          self.time = getappdata(0,'data_rbody_time');
+         %self.time = 0;
       end
       
    end

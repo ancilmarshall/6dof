@@ -49,7 +49,7 @@ rbody = RBody5D(states,dt);
 angleInput = AngleInput(dt);
 positionLoop = PositionLoop(dt);
 positionInput = PositionInput(dt);
-positionRef = PositionRef3FullState(dt);
+positionRef = PositionRefLQServo(dt);
 
 % producer registration
 rbody.angleCommandProducer = angleInput;
@@ -59,6 +59,25 @@ positionLoop.positionRef = positionRef;
 
 % set cmds
 thetaCmd0 = 20*pi/180;
+
+% set gains
+% design 1 - overshoot in theta
+% positionRef.Kp = 7.73;
+% positionRef.Kd = 9.3;
+% positionRef.Ka = 5.35;
+% positionRef.Ki = -3.16;
+% positionRef.alpha = 0.87;
+
+% design 2 - Q = diag([1 100 100]);
+% good. slower response in v, and acc i.e. less overshoot.
+% slow response on x
+positionRef.Kp = 10.921;
+positionRef.Kd = 18.7;
+positionRef.Ka = 11.722;
+positionRef.Ki = -3.16;
+positionRef.alpha = .87; % it's strange that this has big influence anot
+ %  part of the LQR output. Not robust at all
+
 
 % add Wind
 
@@ -83,7 +102,7 @@ while (rbody.time < tf)
    
    velTransition = angleInput.getLeveloutTransitionVx;
    if strcmp(phase,'braking') && (angleInput.vx < 2)
-      positionInput.xInput = 20; 
+      positionInput.xInput = 19; 
       rbody.angleCommandProducer = positionLoop;
       
       positionInput.activate;
@@ -152,8 +171,11 @@ ylabel('Accel X (m/s^2)');
 figure;
 % subplot(211)
 plotg(rbody_time,rbody_x);
-title('Distance X response');
-ylabel('Distance X (m)');
+hold on;
+plotg(positionRef_time,positionRef_x,'k--');
+plotg(positionInput_time,positionInput_xInput,'r--');
+title('Rbody X response');
+ylabel('Rbody X (m)');
 % subplot(212);
 % plotg(rbody_time,rbody_y);
 % title('Distance Y response');
@@ -211,3 +233,4 @@ else
 end
 end
 disp(max(rbody_x))
+fanfigs
