@@ -51,9 +51,15 @@ classdef PositionRef3 < handle & IWriter
          self.dt = dt;
          self.time = 0;
          
-         self.Kd = 2*self.zeta*self.wn;
-         self.Kp = (self.wn)^2/self.Kd;
-         self.Ka = 10;
+         % gains based on desired bw and damping ratio
+%          self.Kd = 2*self.zeta*self.wn;
+%          self.Kp = (self.wn)^2/self.Kd;
+%          self.Ka = 10;
+         
+         % let's pick gains to separate bw in successive loops
+         self.Kp = 0;% 0.5;
+         self.Kd = 0;%1.6;
+         self.Ka = 10.0; 
          
 %          self.writer = Writer(self.name,self.outputVars, ...
 %             @() [ self.time ...
@@ -75,7 +81,7 @@ classdef PositionRef3 < handle & IWriter
          
          %calculate the control/acceleration
          w = self.Kp*(xin-self.x);
-         v = self.Kp*(w-self.vx);
+         v = self.Kd*(w-self.vx);
          self.jx = self.Ka*(v-self.ax);
          
          w = self.Kp*(yin-self.y);

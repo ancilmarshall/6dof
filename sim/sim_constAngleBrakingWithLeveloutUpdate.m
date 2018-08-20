@@ -2,12 +2,13 @@
 % Transitions to the correct angle to maintain a fixed position at the
 % end of the maneuver taking into account wind. 
 
+
 clear all;
 close all;
 
 % config
 t0 = 0;
-tf = 15;
+tf = 8;
 dt = 0.005;
 i_compare_exact = 0;
 i_print = 0;
@@ -49,35 +50,17 @@ rbody = RBody5D(states,dt);
 angleInput = AngleInput(dt);
 positionLoop = PositionLoop(dt);
 positionInput = PositionInput(dt);
-positionRef = PositionRefLQServo(dt);
+%positionRef = PositionRefLQServo(dt);
+positionRef = PositionRef3(dt);
+%positionRef = PositionRef(dt);
 
 % producer registration
 rbody.angleCommandProducer = angleInput;
 positionRef.positionInput = positionInput;
 positionLoop.positionRef = positionRef;
 
-
 % set cmds
 thetaCmd0 = 20*pi/180;
-
-% set gains
-% design 1 - overshoot in theta
-% positionRef.Kp = 7.73;
-% positionRef.Kd = 9.3;
-% positionRef.Ka = 5.35;
-% positionRef.Ki = -3.16;
-% positionRef.alpha = 0.87;
-
-% design 2 - Q = diag([1 100 100]);
-% good. slower response in v, and acc i.e. less overshoot.
-% slow response on x
-positionRef.Kp = 10.921;
-positionRef.Kd = 18.7;
-positionRef.Ka = 11.722;
-positionRef.Ki = -3.16;
-positionRef.alpha = .87; % it's strange that this has big influence anot
- %  part of the LQR output. Not robust at all
-
 
 % add Wind
 
@@ -93,6 +76,9 @@ setappdata(0,'env_wind_vwy',vwy);
 % initialize sim
 angleInput.thetaCmd = thetaCmd0;
 phase = 'flying'; %flying, braking, levelout
+
+startPos = 0;
+
 while (rbody.time < tf) 
    
    %handle events here
@@ -102,7 +88,7 @@ while (rbody.time < tf)
    
    velTransition = angleInput.getLeveloutTransitionVx;
    if strcmp(phase,'braking') && (angleInput.vx < 2)
-      positionInput.xInput = 19; 
+      positionInput.xInput = startPos + 2; 
       rbody.angleCommandProducer = positionLoop;
       
       positionInput.activate;
@@ -113,6 +99,7 @@ while (rbody.time < tf)
       positionRef.step;
       positionLoop.step;
    else
+      startPos = rbody.states(1); %x
       angleInput.step
    end
    
@@ -131,7 +118,8 @@ figure;
 %subplot(211);
 plotg(rbody_time,rbody_theta*180/pi);
 hold on;
-plotg(angleInput_time,angleInput_thetaCmd*180/pi,'r--');
+%plotg(angleInput_time,angleInput_thetaCmd*180/pi,'r--');
+plotg(positionLoop_time,positionLoop_thetaCmd*180/pi,'r--');
 ylabel('Theta (deg)');
 title('Body Theta');
 % subplot(212);
@@ -160,7 +148,6 @@ figure;
 plotg(rbody_time,rbody_ax);
 hold on;
 plotg(positionRef_time,positionRef_ax,'r--');
-hold on;
 title('Accel X response');
 ylabel('Accel X (m/s^2)');
 % subplot(212);

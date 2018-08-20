@@ -26,7 +26,8 @@ classdef PositionRef < handle & IWriter
       wn = 1.5;
       zeta = 0.8;
       
-      ulim = .05;
+      %ulim = .05;
+      ulim = 1000;
       
       Kp;
       Kd;
@@ -81,12 +82,11 @@ classdef PositionRef < handle & IWriter
          self.x = xdot * self.dt + self.x;
          self.vx = vxdot * self.dt + self.vx;
          
-         axLimit = 100;
+         axLimit = self.ulim;
          dax = axUnlimited - self.ax;
          dax = saturate(dax,-axLimit,axLimit);
          
          self.ax = dax + self.ax;
-         
          
          ydot = self.vy;
          vydot = self.ay;
@@ -115,7 +115,6 @@ classdef PositionRef < handle & IWriter
                   self.ax ...
                   self.ay
             ]');            
-            
             
             % initialize the position ref state
             self.x = getappdata(0,'data_rbody_x');

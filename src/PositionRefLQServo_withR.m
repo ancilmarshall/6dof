@@ -1,11 +1,5 @@
-classdef PositionRefLQServo < handle & IWriter
-   % use the horizontal equations with Cx
-   % xdot = v
-   % vdot = -Cx * v - g * theta
-   % where theta is the input
-   % according to MIT Feedback control notes chapter 13
-   % 
-   % gains based on LQR design
+classdef PositionRefLQServo_withR < handle & IWriter
+   % according to MIT Feedback control notes chapter 17
    
    properties
       
@@ -19,32 +13,40 @@ classdef PositionRefLQServo < handle & IWriter
          'vy'
          'ax'
          'ay'
+         'jx'
+         'jy'
          };
       
       % state/output along with initial conditions
       x = 0;
       vx = 0;
       ax = 0;
+      jx = 0;
       
       y = 0;
       vy = 0;
       ay = 0;
+      jy = 0;
       
       % error
       ex = 0;
       ey = 0;
       
-      errIntx = 0; % additional state
-      errInty = 0; % 
-         
-      Kp = -0.54;
-      Kd = -0.4131;
-      Ki = 0.3162;
+      errIntx = 0;
+      errInty = 0;
       
-      Cx;
-      Cy;
-      G;
-          
+      wn = 0.5;
+      zeta = 0.8;
+      
+      ulim = .05;
+      
+      Kp = 17;
+      Kd = 14.3;
+      Ka = 6.2;
+      Ki = -10;
+      
+      alpha = 0.2857;
+      
       %producers
       positionInput;
       
@@ -55,7 +57,7 @@ classdef PositionRefLQServo < handle & IWriter
    methods
       
       % constructor
-      function self = PositionRefLQServo(dt)
+      function self = PositionRefLQServo_withR(dt)
         
          self.dt = dt;
          self.time = 0;
@@ -70,11 +72,6 @@ classdef PositionRefLQServo < handle & IWriter
 %                   self.ax ...
 %                   self.ay
 %             ]');
-
-         self.Cx = getappdata(0,'config_aero_Cx');
-         self.Cy = getappdata(0,'config_aero_Cy');
-         self.G = getappdata(0,'config_env_G');           
-
       end
       
       function step(self)
@@ -89,25 +86,28 @@ classdef PositionRefLQServo < handle & IWriter
          self.ey = yin - self.y;
          
          %calculate the control/acceleration
-         % u = -K x 
-         thetaCmd = - self.Kp*self.x - self.Kd*self.vx - self.Ki*self.errIntx;
-         phiCmd   = - self.Kp*self.y - self.Kd*self.vy - self.Ki*self.errInty;
+         
+         self.jx = self.alpha*self.Kp*xin ...
+                   - self.Kp*self.x - self.Kd*self.vx - self.Ka*self.ax ...
+                   - self.Ki*self.errIntx;
+         
+         self.jy = yin - self.Kp*self.y - self.Kd*self.vy - self.Ka*self.ay;
          
          %integrate and update
          xdot = self.vx;
-         vxdot = -self.Cx*self.vx - self.G*thetaCmd;
-         
+         vxdot = self.ax;
+         axdot = self.jx; % the control input
          self.x = xdot * self.dt + self.x;
          self.vx = vxdot * self.dt + self.vx;
-         self.ax = vxdot;
+         self.ax = axdot * self.dt + self.ax;
          self.errIntx = self.errIntx + self.ex * self.dt;
          
          ydot = self.vy;
-         vydot = -self.Cy*self.vy + self.G*phiCmd;
-         
+         vydot = self.ay;
+         aydot = self.jy; % the control input
          self.y = ydot * self.dt + self.y;
          self.vy = vydot * self.dt + self.vy;
-         self.ay = vydot;
+         self.ay = aydot * self.dt + self.ay;
          self.errInty = self.errInty + self.ey * self.dt;
          
          self.time = self.time + self.dt;
@@ -130,7 +130,9 @@ classdef PositionRefLQServo < handle & IWriter
                   self.vx ...
                   self.vy ...
                   self.ax ...
-                  self.ay
+                  self.ay ...
+                  self.jx ...
+                  self.jy
             ]');            
             
             
@@ -139,8 +141,8 @@ classdef PositionRefLQServo < handle & IWriter
             self.y = getappdata(0,'data_rbody_y');
             self.vx = getappdata(0,'data_rbody_vx');
             self.vy = getappdata(0,'data_rbody_vy');
-%             self.ax = getappdata(0,'data_rbody_ax');
-%             self.ay = getappdata(0,'data_rbody_ay');
+            self.ax = getappdata(0,'data_rbody_ax');
+            self.ay = getappdata(0,'data_rbody_ay');
          end
          
       end         
