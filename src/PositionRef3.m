@@ -57,9 +57,9 @@ classdef PositionRef3 < handle & IWriter
 %          self.Ka = 10;
          
          % let's pick gains to separate bw in successive loops
-         self.Kp = 0;% 0.5;
-         self.Kd = 0;%1.6;
-         self.Ka = 10.0; 
+         self.Kp = 0.75;
+         self.Kd = 1.0;
+         self.Ka = 3.0; 
          
 %          self.writer = Writer(self.name,self.outputVars, ...
 %             @() [ self.time ...

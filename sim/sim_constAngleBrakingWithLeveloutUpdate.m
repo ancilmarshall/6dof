@@ -2,7 +2,6 @@
 % Transitions to the correct angle to maintain a fixed position at the
 % end of the maneuver taking into account wind. 
 
-
 clear all;
 close all;
 
@@ -88,7 +87,7 @@ while (rbody.time < tf)
    
    velTransition = angleInput.getLeveloutTransitionVx;
    if strcmp(phase,'braking') && (angleInput.vx < 2)
-      positionInput.xInput = startPos + 2; 
+      positionInput.xInput = startPos + 1; 
       rbody.angleCommandProducer = positionLoop;
       
       positionInput.activate;
@@ -98,6 +97,8 @@ while (rbody.time < tf)
       positionInput.step;
       positionRef.step;
       positionLoop.step;
+      
+      
    else
       startPos = rbody.states(1); %x
       angleInput.step
@@ -179,6 +180,7 @@ ylabel('Rbody X (m)');
 % ylabel('Roll Rate (rad/s)');
 % xlabel('Time (sec)');
 
+return
 
 figure;
 subplot(311)
@@ -220,4 +222,4 @@ else
 end
 end
 disp(max(rbody_x))
-fanfigs
+%fanfigs
