@@ -80,14 +80,18 @@ startPos = 0;
 
 while (rbody.time < tf) 
    
+   if closetomultipleof(1,rbody.time)
+      fprintf('Time %5.3f ...\n',rbody.time);
+   end
+   
    %handle events here
-   if rbody.time > 1
+   if rbody.time > 0.2
       phase = 'braking';
    end
    
    velTransition = angleInput.getLeveloutTransitionVx;
-   if strcmp(phase,'braking') && (angleInput.vx < 2)
-      positionInput.xInput = startPos + 1; 
+   if strcmp(phase,'braking') && (angleInput.vx < 1)
+      positionInput.xInput = startPos + 2; 
       rbody.angleCommandProducer = positionLoop;
       
       positionInput.activate;
@@ -136,6 +140,7 @@ figure;
 % subplot(211);
 plotg(rbody_time,rbody_vx);
 hold on;
+plotg(positionRef_time,positionRef_vx,'r--');
 title('Velocity X response');
 % subplot(212);
 % plotg(rbody_time,rbody_vy);

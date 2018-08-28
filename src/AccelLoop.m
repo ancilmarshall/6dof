@@ -45,9 +45,9 @@ classdef AccelLoop < handle & IWriter
 %       kd = 0;
       
       % zero gains so that I only have ff control in the accel loop
-      kp = 0;
+      kp = 1;
       ki = 0;
-      kd = 0;      
+      kd = 2;      
       
                     
       Cx;

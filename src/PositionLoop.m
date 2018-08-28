@@ -20,7 +20,7 @@ classdef PositionLoop < handle & IWriter
       axCmd = 0;
       ayCmd = 0;
       axRef = 0;
-      ayRef = 0;
+      ayRef = 0
                
       x = 0;
       y = 0;
@@ -42,9 +42,9 @@ classdef PositionLoop < handle & IWriter
 %       kd = 4;
       
       % how can this be done in using sisotools (Design)
-      kp = 1;
+      kp = 1.6;
       ki = 0;
-      kd = 2;
+      kd = 3.2;
       
       Cx = 0;
       Cy = 0;
@@ -52,6 +52,11 @@ classdef PositionLoop < handle & IWriter
 
       % consumer
       accelLoop;
+      
+      % do this quickly here for now. TODO replace with real accel loop
+      accelXController;
+
+      
       
       %producer
       positionRef;
@@ -88,6 +93,12 @@ classdef PositionLoop < handle & IWriter
          self.posYController.ki = self.ki;
          self.posXController.kd = self.kd;
          self.posYController.kd = self.kd;  
+         
+         self.accelXController = ControllerPID('axLoopPID',dt);
+         self.accelXController.kp = -0.2;
+         self.accelXController.ki = 0;% 0.0;
+         self.accelXController.kd = 0;% -0.02;
+         
          
          %config
          self.Cx = getappdata(0,'config_aero_Cx');
@@ -154,9 +165,13 @@ classdef PositionLoop < handle & IWriter
          totalAyCmd = self.ayCmd + self.ayRef;
          
          thetaFF = - atan2(totalAxCmd + self.Cx*self.vx, self.G);
-         phiFF = atan2(totalAyCmd + self.Cy*self.vy, self.G);         
+         phiFF = atan2(totalAyCmd + self.Cy*self.vy, self.G); 
          
-         self.thetaCmd = thetaFF;
+         self.accelXController.error = totalAxCmd - self.ax; % ax should be changed to horiz frame        
+         self.accelXController.controlFF = thetaFF;
+         self.accelXController.step;
+         
+         self.thetaCmd = self.accelXController.getCommand;
          self.phiCmd = phiFF;
          
          self.time = self.time + self.dt;

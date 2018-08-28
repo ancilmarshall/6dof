@@ -44,20 +44,17 @@ classdef Writer < handle
            stepData = self.getDataCallback();
            self.updateTime(stepData(1));
            self.updateData(stepData(2:end));
-        end
-        
-        % Use setter to execute the step function immediately
-        function set.getDataCallback(self,value)
-           self.getDataCallback = value;
-           self.step;
-        end
-           
+        end       
         
         function write(self)
             assignin('base',[self.prefix '_time'],self.time);
             for i=1:self.numdata
                 label = [self.prefix '_' self.dataLabels{i}];
-                assignin('base',label,self.data(:,i));
+                try
+                  assignin('base',label,self.data(:,i));
+                catch
+                   error(['Error writing ' label]);
+                end
             end
         end
         

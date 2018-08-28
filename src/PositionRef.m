@@ -47,8 +47,11 @@ classdef PositionRef < handle & IWriter
          self.dt = dt;
          self.time = 0;
          
-         self.Kd = 2*self.zeta*self.wn;
-         self.Kp = (self.wn)^2/self.Kd;
+%          self.Kd = 2*self.zeta*self.wn;
+%          self.Kp = (self.wn)^2/self.Kd;
+         
+         self.Kd = 2.6;
+         self.Kp = 0;
          
 %          self.writer = Writer(self.name,self.outputVars, ...
 %             @() [ self.time ...
