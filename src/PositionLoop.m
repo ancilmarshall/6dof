@@ -181,8 +181,8 @@ classdef PositionLoop < handle & IWriter
          
       % override default implementation of the protocol (interface) class
       function write(self)
-         self.posXController.write;
-         self.posYController.write;
+         %self.posXController.write;
+         %self.posYController.write;
          self.writer.write;
       end
       

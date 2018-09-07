@@ -2,11 +2,12 @@ classdef AvoidanceConfigClass < Singleton
    
    properties
       tau = 0.2;
-      tau0 = 0.2;
+      tau0 = 0.4;
       tau1 = 0.2;
-      a0max = -4.5;
+      %a0max = -4.5;
+      a0max = -6;
       a0min = -2;
-      v1min = 0.5;
+      v1min = 0.0;
       v1max = 4.0;
       
       %bepop
@@ -14,7 +15,6 @@ classdef AvoidanceConfigClass < Singleton
 %       G = 9.81;
 %       wn  = 11;
 %       zeta = 0.9;
-      
       
       %anafi
       Cx = 0.47;

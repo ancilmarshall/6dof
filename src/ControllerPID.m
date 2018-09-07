@@ -84,7 +84,7 @@ classdef ControllerPID < handle & IWriter
          end
                   
          self.prev_error = self.error;
-         self.writer.step;
+         %self.writer.step;
          
       end
       

@@ -1,4 +1,4 @@
-classdef RBody5D < handle & IWriter
+classdef RBody5D < handle & IWriter & IDataManager
    
     properties
 
@@ -156,6 +156,12 @@ classdef RBody5D < handle & IWriter
             setappdata(0,'data_rbody_theta',theta);
             setappdata(0,'data_rbody_phi',phi); 
             setappdata(0,'data_rbody_time',self.time);
+            
+%             self.dataManager.set('data_rbody_vx',vx);
+%             self.dataManager.set('data_rbody_vy',vy);
+%             self.dataManager.set('data_rbody_ax',self.ax);
+%             self.dataManager.set('data_rbody_ay',self.ay);            
+            
         end
         
     end

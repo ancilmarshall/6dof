@@ -1,4 +1,4 @@
-classdef AngleInput < handle & IWriter
+classdef AngleInput < handle & IWriter & IDataManager
 
    properties
       
@@ -50,8 +50,16 @@ classdef AngleInput < handle & IWriter
          self.vy = getappdata(0,'data_rbody_vy'); 
          self.ax = getappdata(0,'data_rbody_ax');
          self.ay = getappdata(0,'data_rbody_ay');
+         
+%          self.vx = self.dataManager.get('data_rbody_vx');
+%          self.vy = self.dataManager.get('data_rbody_vy'); 
+%          self.ax = self.dataManager.get('data_rbody_ax');
+%          self.ay = self.dataManager.get('data_rbody_ay');
+         
          self.vwx = getappdata(0,'env_wind_vwx');
          self.vwy = getappdata(0,'env_wind_vwy');
+         
+         
          
          % angle profile goes here
 
