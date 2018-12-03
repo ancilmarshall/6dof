@@ -42,7 +42,7 @@ guidance = AccelGuidanceLoopFastBraking(dt);
 
 % producer registration
 rbody.angleCommandProducer = accelLoop;
-accelLoop.guidance = guidance;
+accelLoop.accelCommandProducer = guidance;
 
 % need to set this to properly init the guidance loop
 waypointManager = WaypointManager;

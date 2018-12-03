@@ -24,6 +24,9 @@ classdef AccelLoop < handle & IWriter
          'errorAy'
          };
       
+      
+      % Todo, the outer guidance loops should provide only one accel
+      % command. 
       axRef = 0; % open loop guidance reference
       ayRef = 0;
       axCmd = 0; % from outer position loop compensation
@@ -49,13 +52,12 @@ classdef AccelLoop < handle & IWriter
       ki = 0;
       kd = 2;      
       
-                    
       Cx;
       Cy;
       G;
       
       % producer
-      guidance;
+      accelCommandProducer; 
       
       phase = 0;
       
@@ -117,14 +119,12 @@ classdef AccelLoop < handle & IWriter
          self.phi = getappdata(0,'data_rbody_phi');
          self.ax = getappdata(0,'data_rbody_ax');
          self.ay = getappdata(0,'data_rbody_ay');
-         
-         userThetaCmd = getappdata(0,'data_guidance_userThetaCmd');
-         
-         % guidance object is an AccelGuidanceLoop object for this consumer
-         self.axCmd = self.guidance.axCmd;
-         self.ayCmd = self.guidance.ayCmd;
-         self.axRef = self.guidance.axRef;
-         self.ayRef = self.guidance.ayRef;
+                  
+         % accelCommandProducer object is an AccelGuidanceLoop object for this consumer
+         self.axCmd = self.accelCommandProducer.axCmd;
+         self.ayCmd = self.accelCommandProducer.ayCmd;
+         self.axRef = self.accelCommandProducer.axRef;
+         self.ayRef = self.accelCommandProducer.ayRef;
          
          % step composants
          totalAxCmd = self.axRef + self.axCmd;
@@ -132,8 +132,12 @@ classdef AccelLoop < handle & IWriter
          self.errorAx = totalAxCmd - self.ax;
          self.errorAy = totalAyCmd - self.ay;
    
-         self.accelXController.error = - self.errorAx; % gain negative for pitch axis
-         self.accelYController.error = self.errorAy; 
+         %self.accelXController.error = - self.errorAx; % gain negative for pitch axis
+         %self.accelYController.error = self.errorAy; 
+         
+         % Feedback on accel is not working. Just do FF control
+         self.accelXController.error = 0; % gain negative for pitch axis
+         self.accelYController.error = 0;         
          
          % feedfoward calculation
          thetaFF = - atan2(totalAxCmd + self.Cx*self.vx, self.G);
@@ -142,15 +146,17 @@ classdef AccelLoop < handle & IWriter
          self.accelXController.controlFF = thetaFF;
          self.accelYController.controlFF = phiFF;
    
-         guidance_state = getappdata(0,'logic_guidance_state');
+         % Remove this. AccelLoop should only get accel cmds
+         % no thetaCmd. Use AngleInput
+         % guidance_state = getappdata(0,'logic_guidance_state');
          % 0 - user pilot command, 1 - use outer position/accel loop
          
-         if (guidance_state >= 1) % TODO: get rid of this 
+         %if (guidance_state >= 1) % TODO: get rid of this 
             self.accelXController.step;
             self.thetaCmd  = self.accelXController.getCommand;
-         else
-            self.thetaCmd = userThetaCmd;
-         end
+         %else
+         %   self.thetaCmd = userThetaCmd;
+         %end
          
          self.accelYController.step;
          self.phiCmd = self.accelYController.getCommand;         

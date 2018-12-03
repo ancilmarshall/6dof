@@ -1,4 +1,4 @@
-classdef RBody5D < handle & IWriter & IDataManager
+classdef RBody5D < handle & IWriter % & IDataManager
    
     properties
 

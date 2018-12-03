@@ -54,9 +54,10 @@ positionRef = PositionRef3(dt);
 %positionRef = PositionRef(dt);
 
 % producer registration
-rbody.angleCommandProducer = angleInput;
-positionRef.positionInput = positionInput;
-positionLoop.positionRef = positionRef;
+rbody.angleCommandProducer = angleInput; % initial guidance is angles
+     % will switch to positionLoop later
+positionRef.positionInput = positionInput; % to use later
+positionLoop.positionRef = positionRef; % to use later
 
 % set cmds
 thetaCmd0 = 20*pi/180;
@@ -92,6 +93,8 @@ while (rbody.time < tf)
    velTransition = angleInput.getLeveloutTransitionVx;
    if strcmp(phase,'braking') && (angleInput.vx < 1)
       positionInput.xInput = startPos + 2; 
+      
+      %switch the producer of the rbody to positionLoop
       rbody.angleCommandProducer = positionLoop;
       
       positionInput.activate;
@@ -102,8 +105,7 @@ while (rbody.time < tf)
       positionRef.step;
       positionLoop.step;
       
-      
-   else
+   else % flying
       startPos = rbody.states(1); %x
       angleInput.step
    end

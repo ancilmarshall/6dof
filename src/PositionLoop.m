@@ -1,6 +1,8 @@
 classdef PositionLoop < handle & IWriter
    
-   
+   % This version of the PositionLoop contains the acceleration control
+   % TODO - break up into position and accel loop
+   % Write Interface classes to define the inputs and the outputs! 
    properties
       
       dt = 0;
@@ -55,8 +57,6 @@ classdef PositionLoop < handle & IWriter
       
       % do this quickly here for now. TODO replace with real accel loop
       accelXController;
-
-      
       
       %producer
       positionRef;
@@ -161,6 +161,10 @@ classdef PositionLoop < handle & IWriter
          self.ayCmd = self.posYController.getCommand;
          
          % the acceleration loop, which is just a FF transform
+         % TODO - Use the AccelLoop class instead. Break this up into two
+         % Good example here. Any accel loop should take totalAxCmd as
+         % input. The feedback portion and the external reference should
+         % be handled in the guidance blocks
          totalAxCmd = self.axCmd + self.axRef;
          totalAyCmd = self.ayCmd + self.ayRef;
          

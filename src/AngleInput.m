@@ -1,4 +1,4 @@
-classdef AngleInput < handle & IWriter & IDataManager
+classdef AngleInput < handle & IWriter% & IDataManager
 
    properties
       

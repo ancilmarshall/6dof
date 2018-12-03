@@ -1,16 +1,14 @@
 classdef WaypointManager < handle
    
-
    properties
       waypoints = {};
       head = 1;
-      
    end
    
    methods
       
-      function add(self,wpt)
-         self.waypoints{end+1} = wpt;
+      function add(self,varargin)
+         self.waypoints{end+1} = Waypoint(varargin{:});
       end
       
       function wpt = next(self)

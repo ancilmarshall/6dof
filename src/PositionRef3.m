@@ -112,6 +112,8 @@ classdef PositionRef3 < handle & IWriter
       
       end
       
+      % this can also be done properly with a good event manager
+      % where the controller is properly initialized
       function activate(self)
          
          if self.isActive == false
@@ -119,6 +121,8 @@ classdef PositionRef3 < handle & IWriter
             self.time = getappdata(0,'data_rbody_time');
                     
             % initialize the position ref state
+            % Note: sometimes it is necessary to initialize with a previous
+            % external command trajectory (not the state of the system)
             self.x = getappdata(0,'data_rbody_x');
             self.y = getappdata(0,'data_rbody_y');
             self.vx = getappdata(0,'data_rbody_vx');

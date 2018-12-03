@@ -2,6 +2,8 @@ classdef ControllerPID < handle & IWriter
    
    % n order digital filter implementation
    
+   % TODO - Need and init function to init the integrator
+   
    properties
 
       kp = 0;
@@ -84,7 +86,7 @@ classdef ControllerPID < handle & IWriter
          end
                   
          self.prev_error = self.error;
-         %self.writer.step;
+         self.writer.step;
          
       end
       

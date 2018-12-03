@@ -52,10 +52,12 @@ classdef Waypoint < handle
          value = [self.x self.y self.z]';
       end
       
+      % operator overloading
       function value = plus(obj1,obj2)
          value = obj1.position + obj2.position;
       end
       
+      % operator overloadin
       function value = minus(obj1,obj2)
          value = obj1.position - obj2.position;
       end

@@ -51,6 +51,4 @@ classdef PositionInput < handle & IWriter
       
    end
    
-   
-   
 end

@@ -69,7 +69,7 @@ classdef ControllerPI_DerivFeedback < handle & IWriter
          self.control = min(self.control,self.controlMax);
          self.control = max(self.control,self.controlMin);
                   
-         %self.writer.step;
+         self.writer.step;
          
       end
       

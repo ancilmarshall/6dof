@@ -1,5 +1,5 @@
 % Perform cross track guidance with a Velocity Loop
-clear all;
+clear;
 close all;
 
 global Cx Cy G wn zeta thetaCmd phiCmd
@@ -27,7 +27,8 @@ setappdata(0,'config_act_zeta',zeta);
 setappdata(0,'config_aero_Cx',Cx);
 setappdata(0,'config_aero_Cy',Cy);
 setappdata(0,'config_env_G',G);
-
+setappdata(0,'env_wind_vwx',0);
+setappdata(0,'env_wind_vwy',0);
 % objects
 rbody = RBody5D(states,dt);
 accelLoop = AccelLoop(dt);
@@ -35,17 +36,16 @@ guidance = AccelGuidanceLoop(dt);
 
 % producer registration
 rbody.angleCommandProducer = accelLoop;
-accelLoop.guidance = guidance;
+accelLoop.accelCommandProducer = guidance;
 
 % need to set this to properly init the guidance loop
 waypointManager = WaypointManager;
-waypointManager.add([10 5 0]');
-waypointManager.add([20 5 0]');
-waypointManager.add([30 0 0]');
-waypointManager.add([40 0 0]');
+waypointManager.add(10,5,0);
+waypointManager.add(20,5,0);
+waypointManager.add(30,0,0);
+waypointManager.add(40,0,0,false);
 
 guidance.setWaypointManager(waypointManager);
-
 
 
 % sim
@@ -65,13 +65,13 @@ figure;
 subplot(211);
 plotg(rbody_time,rbody_theta*180/pi);
 hold on;
-plotg(rbody_time,accelLoop_thetaCmd*180/pi,'r--');
+%plotg(rbody_time,accelLoop_thetaCmd*180/pi,'r--');
 ylabel('Theta (deg)');
 title('Body Theta');
 subplot(212);
 plotg(rbody_time,rbody_phi*180/pi);
 hold on;
-plotg(rbody_time,accelLoop_phiCmd*180/pi,'r--');
+%plotg(rbody_time,accelLoop_phiCmd*180/pi,'r--');
 ylabel('Phi (deg)');
 title('Body Phi');
 xlabel('Time (sec)');
@@ -116,7 +116,5 @@ plotg(rbody_time,rbody_ay);
 title('Accel Y response');
 ylabel('Accel Y (m/s^2)');
 
-
-fanfigs;
 
 

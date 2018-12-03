@@ -44,11 +44,11 @@ guidance = AccelGuidanceLoopTrajRef(dt);
 
 % producer registration
 rbody.angleCommandProducer = accelLoop; % velocityLoop
-accelLoop.guidance = guidance;
+accelLoop.accelCommandProducer = guidance;
 
 % need to set this to properly init the guidance loop
 waypointManager = WaypointManager;
-waypointManager.add(Waypoint(20,0,0,false)); %false = not safe, must stop
+waypointManager.add(20,0,0,false); %false = not safe, must stop
 % waypointManager.add(Waypoint(10,5,0)); %false = not safe, must stop
 % waypointManager.add(Waypoint(20,0,0)); %false = not safe, must stop
 % waypointManager.add(Waypoint(30,0,0)); %false = not safe, must stop
