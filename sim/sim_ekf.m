@@ -1,9 +1,13 @@
+% Simulate the EKF using the FallingBallisticBall model from:
+% Optimal State Estimation. Kalman, Hinf by Dan Simon. Chapter 13
+% Example 13.2
+
 clear;
 close all;
 
 % config
 dt = 1/50;  % 100 Hz
-tf = 2;      % [sec] - simulation end time
+tf = 3;      % [sec] - simulation end time
 
 %inital data
 height = 100000; % [m]
@@ -16,7 +20,7 @@ model = FallingBallisticBall(initial_states, dt);
 
 % extended kalman filter setup
 % callback functions for the nonlinear problem
-% use a mix of the static class memember with instance parameters to define
+% use a mix of the static class member with instance parameters to define
 % the instance specific parameters, and keeping the interface of the
 % callbacks simple and in agreement with the textbook equations
 % Note could use static parameters, or parameters configure in an external
@@ -49,7 +53,7 @@ R = 100;
 ekf = EKF(initial_states, P0, Q, R, callbacks);
 % connect objects
 
-t = [0:dt:tf];
+t = [0:dt:tf]';
 m = length(t);         % number of observations
 n = length(initial_states);     % number of states
 xEst = zeros(m,n);
@@ -67,7 +71,7 @@ while (model.time < tf)
    in = 0; % control input u to the state equations
    obs = model.height;
    %obs = model.sensor_equations(model.states, 0); % zero sensor noise
-   [x, p] = ekf.step(in, obs);
+   [x, p] = ekf.step(dt, in, obs);
    xEst(i,:) = x';
    PEst(:,:,i) = p;
 end
@@ -83,7 +87,7 @@ estimate_time = t;
 
 figure(1);
 hold on;
-plotg(ballisticBall_time,ballisticBall_height);
-plotg(estimate_time, estimate_height,'r--');
-
+error_height = estimate_height - ballisticBall_height;
+error_time = t;
+plotg(error_time,error_height);
 
