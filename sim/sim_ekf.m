@@ -5,9 +5,11 @@
 clear;
 close all;
 
+rng('default');   % reset the random noise generator to have same sequence
+
 % config
-dt = 1/50;  % 100 Hz
-tf = 3;      % [sec] - simulation end time
+dt = 1/100;  % 100 Hz
+tf = 2;      % [sec] - simulation end time
 
 %inital data
 height = 100000; % [m]
@@ -47,33 +49,45 @@ callbacks = {
 P0 = [500    0      0;
        0   20000    0;
        0     0  1/250000];
-Q = diag([0, 0, 0]);
-R = 100;
+Q = diag([300, 100, (0.000125)^2]);
+R = (model.height_noise)^2;
 
-ekf = EKF(initial_states, P0, Q, R, callbacks);
+% initialize the kalman filter state estimates
+dh = 100;
+dv = 140;
+dcoeff = 0.25*coeff;
+xhat_initial = initial_states + [dh; dv; dcoeff];
+ekf = EKF(xhat_initial, P0, Q, R, callbacks);
+
 % connect objects
 
 t = [0:dt:tf]';
 m = length(t);         % number of observations
 n = length(initial_states);     % number of states
 xEst = zeros(m,n);
-PEst = zeros(n,n,m); 
+PEst = zeros(n,n,m);
+Sig = zeros(m,n);
+K = zeros(m,n);
 
-% initialize the output
+% initialize the output matrices
+% [TODO] Change the output to be only when the filter runs
 i = 1;
-xEst(1,:) = initial_states';
+xEst(1,:) = xhat_initial';
 PEst(:,:,1) = P0;
+Sig(1,:) = (sqrt(diag(P0)))';
+K(1,:) = zeros(1,3);
 
 % sim
 while (model.time < tf)
    i = i+1;
    model.step();
    in = 0; % control input u to the state equations
-   obs = model.height;
-   %obs = model.sensor_equations(model.states, 0); % zero sensor noise
+   obs = model.height; % model sensor output with noise
    [x, p] = ekf.step(dt, in, obs);
    xEst(i,:) = x';
    PEst(:,:,i) = p;
+   Sig(i,:) = (sqrt(diag(p)))';
+   K(i,:) = ekf.K';
 end
 
 % write output to matlab
@@ -85,9 +99,42 @@ estimate_velocity = xEst(:,2);
 estimate_coeff = xEst(:,3);
 estimate_time = t;
 
-figure(1);
-hold on;
-error_height = estimate_height - ballisticBall_height;
 error_time = t;
+error_height = estimate_height - ballisticBall_height;
+error_velocity = estimate_velocity - ballisticBall_velocity;
+error_coeff = estimate_coeff - ballisticBall_coeff;
+
+% Plot Estimate Errors
+figure(1);
+subplot(311)
+hold on;
 plotg(error_time,error_height);
+plotg(error_time,[Sig(:,1) -Sig(:,1)],'r--');
+title('Height Error');
+
+subplot(312)
+hold on;
+plotg(error_time,error_velocity);
+plotg(error_time,[Sig(:,2) -Sig(:,2)],'r--');
+title('Velocity Error');
+
+subplot(313)
+hold on;
+plotg(error_time, error_coeff);
+plotg(error_time, [Sig(:,3) -Sig(:,3)], 'r--');
+title('Coeff Error');
+
+% Plot gains
+figure(2);
+subplot(311)
+plotg(t, K(:,1));
+title('K height');
+
+subplot(312)
+plotg(t, K(:,2));
+title('K velocity');
+
+subplot(313)
+plotg(t, K(:,3));
+title('K coeff');
 
