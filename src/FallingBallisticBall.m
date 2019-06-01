@@ -7,6 +7,8 @@ classdef FallingBallisticBall < handle & IWriter
         time
         states = [];
         
+        use_measurement_noise = true;  % add noise to sensor output by default
+        
         name = 'ballisticBall';
         outputVars = {
             'height'
@@ -18,6 +20,10 @@ classdef FallingBallisticBall < handle & IWriter
         height      % height of object
         velocity    % velocity of object
         coeff       % 1/ballistic coefficient that is constant
+        
+        height_noise = 100;   % 1-sigma height noise value
+        vel_noise = 10;       % 1-sigma velocity noise value
+        coeff_noise = 0;      % 1-sigma coeff noise value
         
         % paramters
         rho = 0.0034; % [lb-sec^2/ft^4] air density at sea-level
@@ -38,6 +44,7 @@ classdef FallingBallisticBall < handle & IWriter
             self.writer = Writer(self.name, self.outputVars, ...
                 @() [self.time;self.height;self.velocity;self.coeff]);
             self.writer.step();
+            
         end
         
         function step(self)
@@ -62,7 +69,7 @@ classdef FallingBallisticBall < handle & IWriter
             self.integrator.updateDerivatives(xdot);
             [self.time, self.states] = self.integrator.step();
             
-            % update internal variables and calculated output
+            % update sensor output variables and calculated output
             self.updateOutput();
             
             % update the writer
@@ -74,10 +81,22 @@ classdef FallingBallisticBall < handle & IWriter
         end
         
         function updateOutput(self)
-            % update internal variables
-            self.height = self.states(1);
-            self.velocity = self.states(2);
-            self.coeff = self.states(3);
+            % update sensed output variables
+            
+            % noise values
+            h_noise = 0;
+            v_noise = 0;
+            c_noise = 0;
+            
+            if self.use_measurement_noise
+                h_noise = self.height_noise * randn;
+                v_noise = self.vel_noise * randn;
+                c_noise = self.coeff_noise * randn;
+            end
+
+            self.height = self.states(1) + h_noise;
+            self.velocity = self.states(2) + v_noise;
+            self.coeff = self.states(3) + c_noise;
         end
         
         function updateDataManager(~)
