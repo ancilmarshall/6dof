@@ -9,10 +9,10 @@ rng('default');   % reset the random noise generator to have same sequence
 
 % config
 dt = 1/100;  % 100 Hz
-tf = 2;      % [sec] - simulation end time
+tf = 5;      % [sec] - simulation end time
 
 %inital data
-height = 100000; % [m]
+height = 200000; % [m]
 velocity = -6000; % [m/s]
 coeff = 1/2000;    % [ ? ] Ballistic coefficient
 initial_states = [height; velocity; coeff];
@@ -36,6 +36,12 @@ F_equ = @(x) FallingBallisticBall.state_jacobian(x, params);
 L_equ = @(x) FallingBallisticBall.process_jacobian();
 H_equ = @(x) FallingBallisticBall.model_jacobian();
 M_equ = @(x) FallingBallisticBall.measurement_jacobian();
+;.l,
+
+% noise covariance matrix
+Qparams = [model.rho, model.k, model.G, model.PhiS];
+Q_equ = @(x,dt) FallingBallisticBall.process_covar(x,dt, Qparams);
+R_equ = @() (model.height_noise^2);
 
 callbacks = {
    state_equ
@@ -44,6 +50,8 @@ callbacks = {
    L_equ
    H_equ
    M_equ
+   Q_equ
+   R_equ
    };
 
 P0 = [500    0      0;
@@ -57,7 +65,8 @@ dh = 100;
 dv = 140;
 dcoeff = 0.25*coeff;
 xhat_initial = initial_states + [dh; dv; dcoeff];
-ekf = EKF(xhat_initial, P0, Q, R, callbacks);
+xhat_initial(1) = 100500;
+ekf = EKF(xhat_initial, P0, callbacks);
 
 % connect objects
 
@@ -77,12 +86,14 @@ PEst(:,:,1) = P0;
 Sig(1,:) = (sqrt(diag(P0)))';
 K(1,:) = zeros(1,3);
 
+
 % sim
-while (model.time < tf)
+epsi  = 1e-6;
+while (model.time + epsi < tf)
    i = i+1;
    model.step();
    in = 0; % control input u to the state equations
-   obs = model.height; % model sensor output with noise
+   obs = model.sensorOutput(); % model sensor output with noise
    [x, p] = ekf.step(dt, in, obs);
    xEst(i,:) = x';
    PEst(:,:,i) = p;
@@ -109,7 +120,7 @@ figure(1);
 subplot(311)
 hold on;
 plotg(error_time,error_height);
-plotg(error_time,[Sig(:,1) -Sig(:,1)],'r--');
+plotg(error_time,[Sig(:,1) -Sig(:,1)], 'r--');
 title('Height Error');
 
 subplot(312)

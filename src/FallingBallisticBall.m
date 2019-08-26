@@ -21,14 +21,15 @@ classdef FallingBallisticBall < handle & IWriter
         velocity    % velocity of object
         coeff       % 1/ballistic coefficient that is constant
         
-        height_noise = 100;   % 1-sigma height noise value
-        vel_noise = 10;       % 1-sigma velocity noise value
-        coeff_noise = 0;      % 1-sigma coeff noise value
+        height_noise = 100;      % 1-sigma height noise value
+        vel_noise = 10;          % 1-sigma velocity noise value
+        coeff_noise = 0.000125;  % 1-sigma coeff noise value
         
         % paramters
         rho = 0.0034; % [lb-sec^2/ft^4] air density at sea-level
         k = 22000;  % [ft] constant between rho and altitude
         G = 32.2;  % [ft/s^2]
+        PhiS = 100.0;
     end
     
     methods
@@ -38,39 +39,25 @@ classdef FallingBallisticBall < handle & IWriter
             self.time = 0;
             self.states = initial_states;
             self.dt = dt;
-            self.updateOutput();
+            self.updateData();
             
             self.integrator = Integrator(self.states, self.dt);
             self.writer = Writer(self.name, self.outputVars, ...
-                @() [self.time;self.height;self.velocity;self.coeff]);
+                @() [self.time;self.states(1);self.states(2);self.states(3)]);
             self.writer.step();
-            
         end
         
         function step(self)
-            
-            % integration step
-            %          xdot = FallingBallisticBall.state_equations(self.states, 0, 0, ...
-            %             [self.rho, self.k, self.G]);
-            
-            x1 = self.states(1);
-            x2 = self.states(2);
-            x3 = self.states(3);
-            
-            %input
+                      
+            % Integration of the state
             % No input for these equations xdot = f(x,u,w);  u = 0
-            
-            % nonlinear equations of motion
-            x1dot = x2;
-            x2dot = -self.rho * exp(-x1/self.k) * x2^2 * x3/2 - self.G;
-            x3dot = 0;
-            xdot = [x1dot; x2dot; x3dot];
-            
+            params = [self.rho, self.k, self.G];
+            xdot = FallingBallisticBall.state_equations(self.states, 0, 0, params);
             self.integrator.updateDerivatives(xdot);
             [self.time, self.states] = self.integrator.step();
             
-            % update sensor output variables and calculated output
-            self.updateOutput();
+            % update data other than states
+            self.updateData();
             
             % update the writer
             self.writer.step();
@@ -80,23 +67,26 @@ classdef FallingBallisticBall < handle & IWriter
             
         end
         
-        function updateOutput(self)
+        function updateData(self)
+            % update any internal data after states have been updated
+            self.height = self.states(1);
+            self.velocity = self.states(2);
+            self.coeff = self.states(3);
+        end
+        
+        function out = sensorOutput(self)
+            % sensor available is only the measurement of the height
             % update sensed output variables
             
             % noise values
-            h_noise = 0;
-            v_noise = 0;
-            c_noise = 0;
-            
             if self.use_measurement_noise
                 h_noise = self.height_noise * randn;
-                v_noise = self.vel_noise * randn;
-                c_noise = self.coeff_noise * randn;
+            else
+                h_noise = 0;
             end
 
-            self.height = self.states(1) + h_noise;
-            self.velocity = self.states(2) + v_noise;
-            self.coeff = self.states(3) + c_noise;
+            out = self.states(1) + h_noise;
+            
         end
         
         function updateDataManager(~)
@@ -117,16 +107,17 @@ classdef FallingBallisticBall < handle & IWriter
             x2 = states(2);
             x3 = states(3);
             
-            rho = params(1);
+            rho0 = params(1);
             k = params(2);
             G = params(3);
             
+            rho = rho0 * exp(-x1/k);
             %input
             % No input for these equations xdot = f(x,u,w);  u = 0
             
             % nonlinear equations of motion
             x1dot = x2;
-            x2dot = -rho * exp(-x1/k) * x2^2 * x3/2 - G;
+            x2dot = rho * G * x2^2 / ( 2 * x3) - G;
             x3dot = 0;
             xdot = [x1dot; x2dot; x3dot];
             
@@ -142,12 +133,17 @@ classdef FallingBallisticBall < handle & IWriter
             x1 = states(1);
             x2 = states(2);
             x3 = states(3);
-            rho = params(1);
-            k = params(2);
             
-            A21 = rho * exp(-x1/k) * x2^2 * x3 / (2 * k);
-            A22 = -rho * exp(-x1/k) * x2 * x3;
-            A23 = -rho * exp(-x1/k) * x2^2 * x3 / 2;
+            rho0 = params(1);
+            k = params(2);
+            G = params(3);
+            
+            rho = rho0 * exp(-x1/k);
+            A21 = -rho * G * x2^2  / (2 * k * x3);
+            A22 = rho * G * x2 / x3;
+            A23 = - rho * G * x2^2 / (2 *  x3^2 );
+            
+
             F = [ 0   1   0 ;
                 A21 A22 A23;
                 0   0   0 ];
@@ -167,6 +163,27 @@ classdef FallingBallisticBall < handle & IWriter
             % dh/dv = M
             M = 1;
         end
+        
+        function Q = process_covar(states, dt, params)
+            x1 = states(1);    % height
+            x2 = states(2);    % velocity
+            x3 = states(3);    % ballistic coefficient
+            
+            rho0 = params(1);
+            k = params(2);
+            G = params(3);
+            PhiS = params(4);
+            
+            rho = rho0 * exp(-x1/k);
+            
+            A23 = - rho * G * x2^2 / (2 *  x3^2 );
+            
+            Q = PhiS * [ 0      0                0 ;
+                         0   A23^2*dt^3/3    A23*dt^2/2; 
+                         0    A23*dt^2/2        dt ];            
+        end
+       
+
     end
     
 end

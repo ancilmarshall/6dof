@@ -12,13 +12,16 @@ classdef EKF < handle
         H_func  % dh/dx - model state jacobian matrix
         M_func  % dh/dv - model noise jacobian matrix (shown in coursera)
         
+        Q_func; % discrete process covariance matrix
+        R_func; % discrete measurement noise covariance matrix
+        
         %
         n       % number of states
         m       % number of outputs
         
         Q       % process noise matrix
         R       % measurement noise matrix
-        
+                
         % A priori estimate (prediction)
         xbar
         Pbar
@@ -35,13 +38,11 @@ classdef EKF < handle
     methods
         
         % constructor
-        function self = EKF(xhat, Phat, Q, R, callbacks)
+        function self = EKF(xhat, Phat, callbacks)
                         
             % FIXME: Who is responsible for properly initializing the filter?
             self.xhat = xhat;
             self.Phat = Phat;
-            self.Q = Q;
-            self.R = R;
             
             % assign callbacks
             self.f_func = callbacks{1}; % ["state_func"];
@@ -50,11 +51,11 @@ classdef EKF < handle
             self.L_func = callbacks{4}; % ["L_func"];
             self.H_func = callbacks{5}; % ["H_func"];
             self.M_func = callbacks{6}; % ["M_func"];
+            self.Q_func = callbacks{7}; % 
+            self.R_func = callbacks{8}; % 
             
             self.n = length(xhat);
-            
-            
-            
+                        
         end
         
         function [stateEst, stateCov] = step(self, dt, in, obs)
@@ -68,11 +69,15 @@ classdef EKF < handle
             % Propagation Step
             F = self.F_func(self.xhat);
             L = self.L_func(self.xhat);
+            Phi = eye(self.n) + F*dt;   % approximation
+            
+            self.Q = self.Q_func(self.xhat, dt); % need to pass dt
+            self.R = self.R_func();
             
             % [TODO] add and integrator here to propagate the state
             % Use simple euler integration to propagate the states
             self.xbar = self.xhat + self.f_func(self.xhat, in, 0) * dt;
-            self.Pbar = F * self.Phat * F' + L * self.Q * L';
+            self.Pbar = Phi * self.Phat * Phi' + L * self.Q * L';
             
             % Update step
             if (newObs)
