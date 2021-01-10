@@ -17,14 +17,30 @@ S = 10;     % [m] Height of reference
 D = 100;    % [m] Horizontal distance of reference
 
 % callback functions for the nonlinear problem
-state_equ = @(x, u, w) [1 dt; 0 1] * x + [0; dt] * u + w;
+% state should just be xdot = f(x,u,w) (No dt term)
+%state_equ = @(x, u, w) [1 dt; 0 1] * x + [0; dt] * u + w;
+state_equ = @(x, u, w) [0 1; 0 0] * x + [0; 1] * u + w;
 measurement_equ = @(x, v) atan(S/D-x(1)) + v;
 
 % jacobians
-F_equ = @(x) [1 dt;0 1];
+F_equ = @(x) [0 1;0 0]; % there is no dt here either
 L_equ = @(x)  eye(2);
 H_equ = @(x) [S/((D-x(1))^2 + S^2), 0];
 M_equ = @(x) 1;
+
+
+%Process Noise - Tuning the filter. Need Q matrix to avoid smug filter
+xnoise = 0.1;   % m, 1-sigma values
+vnoise = 0.1; % m/s, 1-sigma values
+
+Q = diag([xnoise^2, vnoise^2]); 
+Q_equ = @(x,dt) Q; % TODO: update to exact solution. 
+
+% Measurment Model
+yObsNoise = 0.05;
+R = yObsNoise^2;
+R_equ = @(x,dt) R;
+
 
 callbacks = {
    state_equ
@@ -33,12 +49,14 @@ callbacks = {
    L_equ
    H_equ
    M_equ
+   Q_equ
+   R_equ
    };
 
 % initial conditions
 
 x0 = 0;
-x0_sigma = 0.1; 
+x0_sigma = 0.1;
 
 v0 = 5;
 v0_sigma = 1;
@@ -50,19 +68,8 @@ xEst0 = [x0;v0];
 P0 = diag([x0_sigma^2,v0_sigma^2]); % state cov
 % remember that variance is the standard deviation squared
 
-%Process Noise - Tuning the filter. Need Q matrix to avoid smug filter
-xnoise = 0.1;   % m, 1-sigma values
-vnoise = 0.1; % m/s, 1-sigma values
-
-Q = diag([xnoise^2, vnoise^2]);
-
-% Measurment Model
-yObsNoise = 0.05;
-R = yObsNoise^2;
-
-    
 % initialize filter class with the initial state and state cov matrix
-kf = EKF(xEst0, P0, Q, R, callbacks);
+kf = EKF(xEst0, P0, callbacks);
 
 % data
 r = [30 30];
@@ -71,7 +78,7 @@ m = length(r);         % number of observations
 n = length(xEst0);     % number of states
 
 xEst = zeros(m,n);
-PEst = zeros(n,n,m); 
+PEst = zeros(n,n,m);
 
 % initialze output
 xEst(1,:) = xEst0';
@@ -79,10 +86,10 @@ PEst(:,:,1) = P0;
 
 % run filter from the 2nd data point through m
 for i=2:m
-   [x, p] = kf.step(r(i),u);
+   [x, p] = kf.step(dt,u(i),r(i));
    xEst(i,:) = x';
    PEst(:,:,i) = p;
 end
-   
+
 
 
