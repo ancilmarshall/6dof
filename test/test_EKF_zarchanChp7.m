@@ -9,7 +9,7 @@
 % w ~ N([0;0], 0.1*eye(2))   - process noise
 % v ~ N(0, 1000^2)             - measurement noise
 
-clear;
+clear; close all;
 
 dt = 0.1;   % [sec] measurement dt. Constant sample time, as opposed to calculated
             % based on previous time step. Simplified this example.
@@ -57,7 +57,11 @@ Q_equ = Qk;
 % Measurment Model
 yObsNoise = 1000;  % [ft] 1-sigma noise on measurement (the radar altitude)
 R = yObsNoise^2;
-R_equ = @(x,dt) R;
+R_equ = @() R;
+
+% Teachable moment - Filter is sensitive to the measurement noise. Filter must
+% try to tune the sensor noise to represent how well can I trust the measurment
+% If I trust it too much (low sigma), the filter diverges
 
 % TODO: eliminate the callback, just assign the value with setters.
 callbacks = {
@@ -97,7 +101,6 @@ odefun = @(t,x) f(x,0,zeros(nx,1));
 % add noise
 %randn
 
-
 m = length(tspan);         % number of observations
 n = nx;                    % number of states
 %y = ;                     % measurement (observation) (from simulation)
@@ -105,27 +108,32 @@ u = zeros(m,1);            % input u
 
 xEst = zeros(m,n);
 PEst = zeros(n,n,m);
+innov = zeros(m,1);
+innovCov = zeros(m,1);     % innovation is scalar in this example
 
 % initialze output
 xEst(1,:) = xEst0';
 PEst(:,:,1) = P0;
+innov(1,1) = 0;
+innovCov(1,1) = 0;
 
 % run filter from the 2nd data point through m
 for i=2:m
-   [x, p] = kf.step(dt,u(i),y(i,1)+yObsNoise*randn(1));
-   xEst(i,:) = x';
-   PEst(:,:,i) = p;
+   kf.step(dt,u(i),y(i,1)+yObsNoise*randn(1));
+   xEst(i,:) = (kf.stateEst)';
+   PEst(:,:,i) = kf.stateCov;
+   innov(i,1) = kf.innovation;
+   innovCov(i,1) = kf.innovationCov;
 end
 
 % basic simulation
-close all;
-figure(1)
-plot(t,y(:,1)); grid on;
-title('height');
-
-figure(2);
-plot(t,y(:,2)); grid on;
-title('velocity');
+% figure(1)
+% plot(t,y(:,1)); grid on;
+% title('height');
+%
+% figure(2);
+% plot(t,y(:,2)); grid on;
+% title('velocity');
 
 
 %plot the error between the estimate and truth
@@ -143,6 +151,15 @@ err_1sigma = sqrt(squeeze(PEst(2,2,:)));
 plot(t,err,t,err_1sigma,'r--',t,-err_1sigma,'r--'); grid on;
 title('velocity error');
 ylim(150*[-1 1]);
+
+% plot the innovation (residual) data.
+figure(5)
+plot(t,innov,t,sqrt(innovCov),'r--',t,-sqrt(innovCov),'r--');
+grid on;
+title('EKF Innovation');
+ylabel('ft');
+
+
 
 
 

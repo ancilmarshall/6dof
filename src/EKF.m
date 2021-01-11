@@ -38,6 +38,15 @@ classdef EKF < handle
         % Kalman gain
         K
 
+        % Kalman filter state estimates of mean and covariance
+        stateEst
+        stateCov
+
+        % Kalman filter performance indicators
+        innovation
+        innovationCov
+
+
     end
 
     methods
@@ -45,7 +54,6 @@ classdef EKF < handle
         % constructor
         function self = EKF(xhat, Phat, callbacks)
 
-            % FIXME: Who is responsible for properly initializing the filter?
             self.xhat = xhat;
             self.Phat = Phat;
 
@@ -61,9 +69,18 @@ classdef EKF < handle
 
             self.n = length(xhat);
 
+            tmp = self.R_func();
+            self.m = length(tmp);
+
+            % initialize the KF data
+            self.stateEst = self.xhat;
+            self.stateCov = self.Phat;
+            self.innovation = zeros(self.n,1);
+            self.innovationCov = zeros(self.m);
+
         end
 
-        function [stateEst, stateCov] = step(self, dt, in, obs)
+        function step(self, dt, in, obs)
             % step the filter on time step
             % dt : time interval since last update
             % in : input u
@@ -98,20 +115,24 @@ classdef EKF < handle
                 H = self.H_func(self.xhat); % TODO: xbar or xhat?
                 M = self.M_func(self.xhat); % TODO: xbar or xhat?
 
-                self.K = self.Pbar * H' * pinv(H * self.Pbar * H' + M * self.R * M');
+                % filter residual or innovation (must look like zero mean white noise)
+                self.innovation = obs - self.h_func(self.xbar, zeros(self.m,1));
 
-                % filter residual or innovation
-                innovation = obs - self.h_func(self.xbar, 0);
+                % innovation covariance, referred to as S
+                self.innovationCov = H * self.Pbar * H' + M * self.R * M';
 
-                self.xhat = self.xbar + self.K * innovation;
+                % Kalman gain
+                self.K = self.Pbar * H' * pinv(self.innovationCov);
+
+                self.xhat = self.xbar + self.K * self.innovation;
                 self.Phat = (eye(self.n) - self.K * H) * self.Pbar;
             else
                 self.xhat = self.xbar;
                 self.Phat = self.Pbar;
             end
             % return data
-            stateEst = self.xhat;
-            stateCov = self.Phat;
+            self.stateEst = self.xhat;
+            self.stateCov = self.Phat;
         end
 
     end
