@@ -36,7 +36,7 @@ F_equ = @(x) FallingBallisticBall.state_jacobian(x, params);
 L_equ = @(x) FallingBallisticBall.process_jacobian();
 H_equ = @(x) FallingBallisticBall.model_jacobian();
 M_equ = @(x) FallingBallisticBall.measurement_jacobian();
-;.l,
+
 
 % noise covariance matrix
 Qparams = [model.rho, model.k, model.G, model.PhiS];
@@ -94,10 +94,11 @@ while (model.time + epsi < tf)
    model.step();
    in = 0; % control input u to the state equations
    obs = model.sensorOutput(); % model sensor output with noise
-   [x, p] = ekf.step(dt, in, obs);
-   xEst(i,:) = x';
-   PEst(:,:,i) = p;
-   Sig(i,:) = (sqrt(diag(p)))';
+   %[x, p] = ekf.step(dt, in, obs);
+   ekf.step(dt, in, obs);
+   xEst(i,:) = ekf.stateEst';
+   PEst(:,:,i) = ekf.stateCov;
+   Sig(i,:) = (sqrt(diag(ekf.stateCov)))';
    K(i,:) = ekf.K';
 end
 
